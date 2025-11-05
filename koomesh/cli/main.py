@@ -6,13 +6,17 @@ This module provides the CLI entry point for KooMeshGenerator.
 
 Commands:
 - generate: Generate mesh from STEP file
+- batch: Batch process multiple STEP files
 - analyze: Analyze STEP file structure
 - validate: Validate LS-DYNA output
+- info: Show system and dependency information
 - version: Show version information
 
 Usage:
-    koomesh generate input.step --mesh-size 1.0
+    koomesh generate input.step --mesh-size 1.0 -o output.k
+    koomesh batch input_dir/ output_dir/ --mesh-size 1.0 -w 4
     koomesh analyze assembly.step
+    koomesh info
     koomesh --version
 """
 
@@ -24,7 +28,7 @@ import logging
 # Import koomesh modules
 try:
     import koomesh
-    from koomesh.config import Config
+    from koomesh.config import KooMeshConfig
     from koomesh.utils.logger import setup_logger
     from koomesh.io.step_reader import STEPReader, check_pythonocc_available
 except ImportError as e:
@@ -58,7 +62,8 @@ def cli(ctx, verbose, quiet):
 
     logger = setup_logger('koomesh', level=log_level)
     ctx.obj['logger'] = logger
-    ctx.obj['config'] = Config()
+    ctx.obj['config'] = KooMeshConfig()
+    ctx.obj['verbose'] = verbose
 
 
 @cli.command()
@@ -69,8 +74,10 @@ def cli(ctx, verbose, quiet):
               help='Output file path (default: input.k)')
 @click.option('--hex-priority/--no-hex-priority', default=True,
               help='Prioritize hexahedral mesh (default: enabled)')
+@click.option('--validate-quality/--no-validate-quality', default=True,
+              help='Validate mesh quality (default: enabled)')
 @click.pass_context
-def generate(ctx, step_file, mesh_size, output, hex_priority):
+def generate(ctx, step_file, mesh_size, output, hex_priority, validate_quality):
     """
     Generate mesh from STEP file
 
@@ -107,30 +114,37 @@ def generate(ctx, step_file, mesh_size, output, hex_priority):
     logger.info(f"Mesh size: {mesh_size}")
     logger.info(f"Output file: {output}")
 
-    # TODO: Implement full pipeline when meshing modules are complete
-    click.echo(f"Mesh generation not yet fully implemented.")
-    click.echo(f"This will be available in Phase 3-6 of development.")
-    click.echo(f"\nCurrent capabilities:")
-    click.echo(f"  ✓ STEP file reading")
-    click.echo(f"  ✓ Hierarchy parsing")
-    click.echo(f"  ✓ Shape classification")
-    click.echo(f"  ⧗ Mesh generation (in development)")
-    click.echo(f"  ⧗ Contact detection (in development)")
-    click.echo(f"  ⧗ LS-DYNA export (in development)")
-
-    # Placeholder: Read and analyze file
     try:
-        reader = STEPReader()
-        shape = reader.read_file(step_file)
+        # Create pipeline
+        from koomesh.core.pipeline import MeshPipeline, PipelineProgress
 
-        from koomesh.geometry.shape_classifier import ShapeClassifier
-        classifier = ShapeClassifier()
-        result = classifier.classify(shape)
+        # Progress callback
+        def show_progress(progress: PipelineProgress):
+            click.echo(f"[{progress.progress:3.0f}%] {progress.message}")
 
-        click.echo(f"\nShape Analysis:")
-        click.echo(f"  Shape Type: {result.shape_type.value}")
-        click.echo(f"  Recommended Mesh: {result.mesh_type.value}")
-        click.echo(f"  Confidence: {result.confidence:.2%}")
+        pipeline = MeshPipeline(
+            config=ctx.obj['config'],
+            progress_callback=show_progress if ctx.obj.get('verbose', False) else None
+        )
+
+        # Run pipeline
+        result = pipeline.run(
+            step_file=step_file,
+            output_file=output,
+            mesh_size=mesh_size,
+            hex_priority=hex_priority,
+            validate_quality=validate_quality
+        )
+
+        # Display result
+        if result.success:
+            click.echo("\n✓ Mesh generation completed successfully!")
+            result.print_summary()
+            sys.exit(0)
+        else:
+            click.echo("\n✗ Mesh generation failed!", err=True)
+            result.print_summary()
+            sys.exit(1)
 
     except Exception as e:
         logger.error(f"Error during mesh generation: {e}")
@@ -208,6 +222,83 @@ def analyze(ctx, step_file, hierarchy, classify):
 
     except Exception as e:
         logger.error(f"Error during analysis: {e}")
+        click.echo(f"Error: {e}", err=True)
+        sys.exit(1)
+
+
+@cli.command()
+@click.argument('input_dir', type=click.Path(exists=True))
+@click.argument('output_dir', type=click.Path())
+@click.option('--mesh-size', '-s', type=float, required=True,
+              help='Target mesh element size')
+@click.option('--hex-priority/--no-hex-priority', default=True,
+              help='Prioritize hexahedral mesh (default: enabled)')
+@click.option('--recursive/--no-recursive', default=False,
+              help='Search subdirectories recursively')
+@click.option('--workers', '-w', type=int, default=None,
+              help='Number of parallel workers (default: CPU count - 1)')
+@click.option('--sequential', is_flag=True,
+              help='Process files sequentially (no parallelization)')
+@click.pass_context
+def batch(ctx, input_dir, output_dir, mesh_size, hex_priority, recursive, workers, sequential):
+    """
+    Batch process multiple STEP files
+
+    This command processes all STEP files in a directory and generates
+    meshes for each one in parallel.
+
+    Example:
+        koomesh batch input_dir/ output_dir/ --mesh-size 1.0 -w 4
+    """
+    logger = ctx.obj['logger']
+
+    # Check dependencies
+    if not check_pythonocc_available():
+        click.echo("Error: PythonOCC is not installed.", err=True)
+        sys.exit(1)
+
+    try:
+        import gmsh
+    except ImportError:
+        click.echo("Error: GMSH is not installed.", err=True)
+        sys.exit(1)
+
+    logger.info(f"Batch processing directory: {input_dir}")
+    logger.info(f"Output directory: {output_dir}")
+    logger.info(f"Mesh size: {mesh_size}")
+
+    try:
+        from koomesh.core.batch_processor import BatchProcessor
+
+        # Create batch processor
+        processor = BatchProcessor(
+            config=ctx.obj['config'],
+            num_workers=workers,
+            use_multiprocessing=False
+        )
+
+        # Process directory
+        result = processor.process_directory(
+            input_dir=input_dir,
+            output_dir=output_dir,
+            mesh_size=mesh_size,
+            hex_priority=hex_priority,
+            recursive=recursive,
+            parallel=not sequential
+        )
+
+        # Display result
+        result.print_summary()
+
+        if result.completed > 0:
+            click.echo(f"\n✓ Batch processing completed: {result.completed}/{result.total_jobs} succeeded")
+            sys.exit(0)
+        else:
+            click.echo(f"\n✗ All batch jobs failed!", err=True)
+            sys.exit(1)
+
+    except Exception as e:
+        logger.error(f"Error during batch processing: {e}")
         click.echo(f"Error: {e}", err=True)
         sys.exit(1)
 
