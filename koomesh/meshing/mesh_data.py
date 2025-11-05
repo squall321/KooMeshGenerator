@@ -547,3 +547,83 @@ class MeshData:
     def __repr__(self) -> str:
         return (f"MeshData(type={self.element_type.code}, "
                 f"nodes={self.num_nodes()}, elements={self.num_elements()})")
+
+
+def create_structured_box_mesh(
+    length: float,
+    width: float,
+    height: float,
+    nx: int,
+    ny: int,
+    nz: int,
+    origin: tuple[float, float, float] = (0.0, 0.0, 0.0)
+) -> MeshData:
+    """
+    Create a structured hexahedral mesh for a box
+
+    This is a utility function for creating simple test meshes.
+
+    Args:
+        length: Box length (X direction)
+        width: Box width (Y direction)
+        height: Box height (Z direction)
+        nx: Number of elements in X direction
+        ny: Number of elements in Y direction
+        nz: Number of elements in Z direction
+        origin: Box origin coordinates
+
+    Returns:
+        MeshData with structured hex mesh
+
+    Example:
+        >>> mesh = create_structured_box_mesh(10.0, 10.0, 10.0, 2, 2, 2)
+        >>> mesh.num_nodes()
+        27
+        >>> mesh.num_elements()
+        8
+    """
+    mesh = MeshData(element_type=ElementType.HEX8)
+
+    ox, oy, oz = origin
+    dx = length / nx
+    dy = width / ny
+    dz = height / nz
+
+    # Create nodes
+    node_id = 1
+    node_map = {}  # (i,j,k) -> node_id
+
+    for k in range(nz + 1):
+        for j in range(ny + 1):
+            for i in range(nx + 1):
+                x = ox + i * dx
+                y = oy + j * dy
+                z = oz + k * dz
+
+                mesh.add_node(x, y, z, node_id=node_id)
+                node_map[(i, j, k)] = node_id
+                node_id += 1
+
+    # Create hex elements
+    elem_id = 1
+    for k in range(nz):
+        for j in range(ny):
+            for i in range(nx):
+                # Hex8 node ordering (LS-DYNA convention)
+                n1 = node_map[(i, j, k)]
+                n2 = node_map[(i + 1, j, k)]
+                n3 = node_map[(i + 1, j + 1, k)]
+                n4 = node_map[(i, j + 1, k)]
+                n5 = node_map[(i, j, k + 1)]
+                n6 = node_map[(i + 1, j, k + 1)]
+                n7 = node_map[(i + 1, j + 1, k + 1)]
+                n8 = node_map[(i, j + 1, k + 1)]
+
+                mesh.add_element(
+                    node_ids=[n1, n2, n3, n4, n5, n6, n7, n8],
+                    element_id=elem_id,
+                    element_type=ElementType.HEX8
+                )
+                elem_id += 1
+
+    return mesh

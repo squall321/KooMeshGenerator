@@ -127,6 +127,15 @@ class HierarchyNode:
         """
         return self.parent is None
 
+    def num_children(self) -> int:
+        """
+        Get number of children
+
+        Returns:
+            Number of child nodes
+        """
+        return len(self.children)
+
     def get_siblings(self) -> List['HierarchyNode']:
         """
         Get sibling nodes (nodes with same parent)

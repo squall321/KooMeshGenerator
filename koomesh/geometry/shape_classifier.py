@@ -19,7 +19,8 @@ Usage:
 """
 
 from enum import Enum
-from typing import Optional, List, Tuple
+from typing import Optional, List, Tuple, Dict
+from dataclasses import dataclass, field
 import logging
 import math
 

@@ -338,3 +338,7 @@ def set_config(config: Config):
     """
     global _global_config
     _global_config = config
+
+
+# Alias for consistency with newer modules
+KooMeshConfig = Config
