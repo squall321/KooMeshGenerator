@@ -268,12 +268,23 @@ class QualityChecker:
         return min_jac
 
     def _jacobian_hex8_at_point(self, coords: np.ndarray, xi: List[float]) -> float:
-        """Compute Jacobian of hex8 at natural coordinate xi"""
+        """
+        Compute Jacobian of hex8 at natural coordinate xi
+
+        Args:
+            coords: Node coordinates (8, 3) - 8 nodes with x, y, z
+            xi: Natural coordinates [r, s, t] in [-1, 1]
+
+        Returns:
+            Jacobian determinant
+        """
         # Shape function derivatives with respect to natural coordinates
+        # dN_dxi shape: (3, 8) - derivatives for each natural coord
         dN_dxi = self._hex8_shape_derivatives(xi)
 
-        # Jacobian matrix J = dN/dxi * coords
-        J = dN_dxi.T @ coords
+        # Jacobian matrix J = dN/dxi @ coords
+        # (3, 8) @ (8, 3) = (3, 3)
+        J = dN_dxi @ coords
 
         # Return determinant
         return np.linalg.det(J)
