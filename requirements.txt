@@ -1,0 +1,29 @@
+# KooMeshGenerator Core Dependencies
+# =====================================
+
+# Scientific computing
+numpy>=1.20.0
+scipy>=1.7.0
+
+# CLI and utilities
+click>=8.0.0
+tqdm>=4.60.0
+pyyaml>=5.4.0
+dataclasses-json>=0.5.7
+
+# Geometry and meshing (to be built separately)
+# pythonocc-core>=7.5.0  # Build from source - see build/scripts/
+# gmsh>=4.9.0            # Build from source - see build/scripts/
+
+# Optional: For GMSH Python API (if available via pip)
+# gmsh>=4.9.0
+
+# Development dependencies (install with: pip install -e ".[dev]")
+# pytest>=7.0.0
+# pytest-cov>=3.0.0
+# pytest-benchmark>=3.4.1
+# black>=22.0.0
+# flake8>=4.0.0
+# mypy>=0.950
+# sphinx>=4.5.0
+# sphinx-rtd-theme>=1.0.0
