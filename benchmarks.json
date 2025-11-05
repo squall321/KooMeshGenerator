@@ -1,0 +1,226 @@
+{
+  "suite_name": "koomesh_performance",
+  "metadata": {
+    "timestamp": "2025-11-05T22:46:09.679149",
+    "name": "koomesh_performance"
+  },
+  "benchmarks": [
+    {
+      "name": "create_mesh_small",
+      "start_time": 1762382769.6792276,
+      "end_time": 1762382769.6796813,
+      "duration": 0.00045371055603027344,
+      "memory_start": 103817216,
+      "memory_end": 103817216,
+      "memory_peak": null,
+      "operations": 8,
+      "throughput": 17632.38675775092,
+      "metrics": {
+        "nodes": 27,
+        "elements": 8
+      }
+    },
+    {
+      "name": "create_mesh_medium",
+      "start_time": 1762382769.6798947,
+      "end_time": 1762382769.685245,
+      "duration": 0.005350351333618164,
+      "memory_start": 103817216,
+      "memory_end": 105013248,
+      "memory_peak": null,
+      "operations": 1000,
+      "throughput": 186903.61392094826,
+      "metrics": {
+        "nodes": 1331,
+        "elements": 1000
+      }
+    },
+    {
+      "name": "create_mesh_large",
+      "start_time": 1762382769.6855967,
+      "end_time": 1762382769.725958,
+      "duration": 0.04036140441894531,
+      "memory_start": 105013248,
+      "memory_end": 111976448,
+      "memory_peak": null,
+      "operations": 8000,
+      "throughput": 198209.1583573555,
+      "metrics": {
+        "nodes": 9261,
+        "elements": 8000
+      }
+    },
+    {
+      "name": "mesh_node_access",
+      "start_time": 1762382769.73294,
+      "end_time": 1762382769.7330565,
+      "duration": 0.00011658668518066406,
+      "memory_start": null,
+      "memory_end": null,
+      "memory_peak": null,
+      "operations": 100,
+      "throughput": 857730.8793456033,
+      "metrics": {}
+    },
+    {
+      "name": "mesh_element_access",
+      "start_time": 1762382769.73314,
+      "end_time": 1762382769.7331655,
+      "duration": 2.5510787963867188e-05,
+      "memory_start": null,
+      "memory_end": null,
+      "memory_peak": null,
+      "operations": 100,
+      "throughput": 3919910.2803738317,
+      "metrics": {}
+    },
+    {
+      "name": "mesh_coordinate_extraction",
+      "start_time": 1762382769.7332087,
+      "end_time": 1762382769.7344902,
+      "duration": 0.0012814998626708984,
+      "memory_start": 108232704,
+      "memory_end": 108232704,
+      "memory_peak": null,
+      "operations": 1331,
+      "throughput": 1038626.7207441861,
+      "metrics": {
+        "coordinates": 1331
+      }
+    },
+    {
+      "name": "contact_creation",
+      "start_time": 1762382769.7349088,
+      "end_time": 1762382769.7355971,
+      "duration": 0.0006883144378662109,
+      "memory_start": 108232704,
+      "memory_end": 108232704,
+      "memory_peak": null,
+      "operations": 100,
+      "throughput": 145282.4385174922,
+      "metrics": {
+        "contacts": 100
+      }
+    },
+    {
+      "name": "contact_retrieval",
+      "start_time": 1762382769.7359385,
+      "end_time": 1762382769.7360573,
+      "duration": 0.00011873245239257812,
+      "memory_start": null,
+      "memory_end": null,
+      "memory_peak": null,
+      "operations": 100,
+      "throughput": 842229.718875502,
+      "metrics": {}
+    },
+    {
+      "name": "lsdyna_export_small",
+      "start_time": 1762382769.7376745,
+      "end_time": 1762382769.7392044,
+      "duration": 0.0015299320220947266,
+      "memory_start": 108232704,
+      "memory_end": 108232704,
+      "memory_peak": null,
+      "operations": 341,
+      "throughput": 222885.71980676329,
+      "metrics": {
+        "nodes": 216,
+        "elements": 125,
+        "file_size_mb": 0.021795272827148438
+      }
+    },
+    {
+      "name": "lsdyna_export_medium",
+      "start_time": 1762382769.7432892,
+      "end_time": 1762382769.748984,
+      "duration": 0.005694866180419922,
+      "memory_start": 108232704,
+      "memory_end": 108232704,
+      "memory_peak": null,
+      "operations": 2331,
+      "throughput": 409316.0271288621,
+      "metrics": {
+        "nodes": 1331,
+        "elements": 1000,
+        "file_size_mb": 0.14999771118164062
+      }
+    },
+    {
+      "name": "lsdyna_export_large",
+      "start_time": 1762382769.7820005,
+      "end_time": 1762382769.81819,
+      "duration": 0.03618955612182617,
+      "memory_start": 112631808,
+      "memory_end": 112631808,
+      "memory_peak": null,
+      "operations": 17261,
+      "throughput": 476960.8099611305,
+      "metrics": {
+        "nodes": 9261,
+        "elements": 8000,
+        "file_size_mb": 1.1218013763427734
+      }
+    },
+    {
+      "name": "memory_scale_5x5x5",
+      "start_time": 1762382769.8209534,
+      "end_time": 1762382769.821857,
+      "duration": 0.0009036064147949219,
+      "memory_start": 110198784,
+      "memory_end": 110198784,
+      "memory_peak": null,
+      "operations": 125,
+      "throughput": 138334.56464379947,
+      "metrics": {
+        "nodes": 216,
+        "elements": 125
+      }
+    },
+    {
+      "name": "memory_scale_10x10x10",
+      "start_time": 1762382769.8221376,
+      "end_time": 1762382769.8259943,
+      "duration": 0.003856658935546875,
+      "memory_start": 110198784,
+      "memory_end": 110342144,
+      "memory_peak": null,
+      "operations": 1000,
+      "throughput": 259291.7903066271,
+      "metrics": {
+        "nodes": 1331,
+        "elements": 1000
+      }
+    },
+    {
+      "name": "memory_scale_15x15x15",
+      "start_time": 1762382769.8265128,
+      "end_time": 1762382769.8454082,
+      "duration": 0.018895387649536133,
+      "memory_start": 110342144,
+      "memory_end": 111005696,
+      "memory_peak": null,
+      "operations": 3375,
+      "throughput": 178615.01772803554,
+      "metrics": {
+        "nodes": 4096,
+        "elements": 3375
+      }
+    },
+    {
+      "name": "memory_scale_20x20x20",
+      "start_time": 1762382769.8459525,
+      "end_time": 1762382769.8764534,
+      "duration": 0.03050088882446289,
+      "memory_start": 111005696,
+      "memory_end": 113840128,
+      "memory_peak": null,
+      "operations": 8000,
+      "throughput": 262287.43844289845,
+      "metrics": {
+        "nodes": 9261,
+        "elements": 8000
+      }
+    }
+  ]
+}
