@@ -119,6 +119,10 @@ docs/_templates/
 !tests/fixtures/**/*.exo
 !tests/fixtures/**/*.e
 
+# Gmsh output
+*.msh
+!tests/fixtures/**/*.msh
+
 # Example output directories
 abaqus_export_examples/
 ansys_export_examples/
@@ -127,6 +131,7 @@ nastran_export_examples/
 vtk_export_examples/
 unv_export_examples/
 exodus_export_examples/
+gmsh_export_examples/
 
 # Temporary files
 *.tmp
