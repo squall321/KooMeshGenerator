@@ -24,25 +24,46 @@ from dataclasses import dataclass, field
 import logging
 import math
 
-# Try to import PythonOCC
+# Try to import PythonOCC - prefer OCP (cadquery-ocp) over OCC.Core
 try:
-    from OCC.Core.TopoDS import TopoDS_Shape
-    from OCC.Core.TopExp import TopExp_Explorer
-    from OCC.Core.TopAbs import TopAbs_FACE, TopAbs_EDGE, TopAbs_VERTEX, TopAbs_SOLID
-    from OCC.Core.BRepAdaptor import BRepAdaptor_Surface, BRepAdaptor_Curve
-    from OCC.Core.GeomAbs import (
+    # Try OCP first (from cadquery-ocp package)
+    from OCP.TopoDS import TopoDS_Shape, TopoDS_Face, TopoDS_Edge, TopoDS
+    from OCP.TopExp import TopExp_Explorer
+    from OCP.TopAbs import TopAbs_FACE, TopAbs_EDGE, TopAbs_VERTEX, TopAbs_SOLID
+    from OCP.BRepAdaptor import BRepAdaptor_Surface, BRepAdaptor_Curve
+    from OCP.GeomAbs import (
         GeomAbs_Plane, GeomAbs_Cylinder, GeomAbs_Sphere,
         GeomAbs_Line, GeomAbs_Circle
     )
-    from OCC.Core.GProp import GProp_GProps
-    from OCC.Core.BRepGProp import brepgprop_VolumeProperties
-    from OCC.Core.BRepBndLib import brepbndlib
-    from OCC.Core.Bnd import Bnd_Box
-    from OCC.Core.gp import gp_Pnt, gp_Vec, gp_Dir
+    from OCP.GProp import GProp_GProps
+    from OCP.BRepGProp import BRepGProp
+    from OCP.BRepBndLib import BRepBndLib
+    from OCP.Bnd import Bnd_Box
+    from OCP.gp import gp_Pnt, gp_Vec, gp_Dir
     PYTHONOCC_AVAILABLE = True
+    USE_OCP = True
 except ImportError:
-    PYTHONOCC_AVAILABLE = False
-    TopoDS_Shape = object
+    # Fall back to OCC.Core (pythonocc-core)
+    try:
+        from OCC.Core.TopoDS import TopoDS_Shape, TopoDS_Face, TopoDS_Edge, TopoDS, topods
+        from OCC.Core.TopExp import TopExp_Explorer
+        from OCC.Core.TopAbs import TopAbs_FACE, TopAbs_EDGE, TopAbs_VERTEX, TopAbs_SOLID
+        from OCC.Core.BRepAdaptor import BRepAdaptor_Surface, BRepAdaptor_Curve
+        from OCC.Core.GeomAbs import (
+            GeomAbs_Plane, GeomAbs_Cylinder, GeomAbs_Sphere,
+            GeomAbs_Line, GeomAbs_Circle
+        )
+        from OCC.Core.GProp import GProp_GProps
+        from OCC.Core.BRepGProp import brepgprop_VolumeProperties
+        from OCC.Core.BRepBndLib import brepbndlib
+        from OCC.Core.Bnd import Bnd_Box
+        from OCC.Core.gp import gp_Pnt, gp_Vec, gp_Dir
+        PYTHONOCC_AVAILABLE = True
+        USE_OCP = False
+    except ImportError:
+        PYTHONOCC_AVAILABLE = False
+        USE_OCP = False
+        TopoDS_Shape = object
 
 
 class MeshType(Enum):
@@ -220,8 +241,14 @@ class ShapeClassifier:
         exp_face = TopExp_Explorer(shape, TopAbs_FACE)
 
         while exp_face.More():
-            face = exp_face.Current()
+            face_shape = exp_face.Current()
             face_count += 1
+
+            # Cast to TopoDS_Face
+            if USE_OCP:
+                face = TopoDS.Face_s(face_shape)
+            else:
+                face = topods.Face(face_shape)
 
             # Check if face is planar
             surface = BRepAdaptor_Surface(face)
@@ -240,8 +267,14 @@ class ShapeClassifier:
         exp_edge = TopExp_Explorer(shape, TopAbs_EDGE)
 
         while exp_edge.More():
-            edge = exp_edge.Current()
+            edge_shape = exp_edge.Current()
             edge_count += 1
+
+            # Cast to TopoDS_Edge
+            if USE_OCP:
+                edge = TopoDS.Edge_s(edge_shape)
+            else:
+                edge = topods.Edge(edge_shape)
 
             # Check if edge is straight line
             curve = BRepAdaptor_Curve(edge)
@@ -295,8 +328,14 @@ class ShapeClassifier:
         exp_face = TopExp_Explorer(shape, TopAbs_FACE)
 
         while exp_face.More():
-            face = exp_face.Current()
+            face_shape = exp_face.Current()
             face_count += 1
+
+            # Cast to TopoDS_Face
+            if USE_OCP:
+                face = TopoDS.Face_s(face_shape)
+            else:
+                face = topods.Face(face_shape)
 
             surface = BRepAdaptor_Surface(face)
             surf_type = surface.GetType()
@@ -342,7 +381,13 @@ class ShapeClassifier:
         exp_face = TopExp_Explorer(shape, TopAbs_FACE)
 
         while exp_face.More():
-            faces.append(exp_face.Current())
+            face_shape = exp_face.Current()
+            # Cast to TopoDS_Face
+            if USE_OCP:
+                face = TopoDS.Face_s(face_shape)
+            else:
+                face = topods.Face(face_shape)
+            faces.append(face)
             exp_face.Next()
 
         # For now, assume simple geometries with few faces might be sweepable
@@ -445,7 +490,10 @@ class ShapeClassifier:
 
         # Get bounding box
         bbox = Bnd_Box()
-        brepbndlib.Add(shape, bbox)
+        if USE_OCP:
+            BRepBndLib.Add_s(shape, bbox)
+        else:
+            brepbndlib.Add(shape, bbox)
 
         xmin, ymin, zmin, xmax, ymax, zmax = bbox.Get()
 
@@ -471,7 +519,13 @@ class ShapeClassifier:
         exp_face = TopExp_Explorer(shape, TopAbs_FACE)
 
         while exp_face.More():
-            face = exp_face.Current()
+            face_shape = exp_face.Current()
+            # Cast to TopoDS_Face
+            if USE_OCP:
+                face = TopoDS.Face_s(face_shape)
+            else:
+                face = topods.Face(face_shape)
+
             surface = BRepAdaptor_Surface(face)
 
             if surface.GetType() == GeomAbs_Cylinder:
@@ -480,7 +534,10 @@ class ShapeClassifier:
 
                 # Get bounding box for height
                 bbox = Bnd_Box()
-                brepbndlib.Add(shape, bbox)
+                if USE_OCP:
+                    BRepBndLib.Add_s(shape, bbox)
+                else:
+                    brepbndlib.Add(shape, bbox)
                 _, _, zmin, _, _, zmax = bbox.Get()
                 height = zmax - zmin
 

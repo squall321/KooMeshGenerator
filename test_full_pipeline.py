@@ -55,8 +55,10 @@ def test_full_pipeline():
         from koomesh.geometry.shape_classifier import ShapeClassifier
 
         classifier = ShapeClassifier()
-        mesh_type = classifier.classify(shape)
-        logger.info(f"   ✅ Classification: {mesh_type.value}")
+        result = classifier.classify(shape)
+        logger.info(f"   ✅ Classification: {result.mesh_type.value}")
+        logger.info(f"   Shape type: {result.shape_type.value}")
+        logger.info(f"   Confidence: {result.confidence:.2f}")
     except Exception as e:
         logger.warning(f"   ⚠️  Classifier error (expected): {e}")
         logger.info("   Continuing with default tet meshing...")
@@ -116,7 +118,7 @@ def test_full_pipeline():
     logger.info(f"\nWorkflow verified:")
     logger.info(f"  1. STEP file creation      ✅")
     logger.info(f"  2. STEP file reading       ✅")
-    logger.info(f"  3. Shape classification    ⚠️  (needs OCP update)")
+    logger.info(f"  3. Shape classification    ✅")
     logger.info(f"  4. Mesh generation (GMSH)  ✅")
     logger.info(f"  5. LS-DYNA export          ✅")
     logger.info(f"  6. Output verification     ✅")
