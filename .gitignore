@@ -91,10 +91,19 @@ docs/_templates/
 *.cdb
 !tests/fixtures/**/*.cdb
 
+# Nastran output
+*.bdf
+*.dat
+*.f06
+*.log
+*.op2
+!tests/fixtures/**/*.bdf
+
 # Example output directories
 abaqus_export_examples/
 ansys_export_examples/
 lsdyna_export_examples/
+nastran_export_examples/
 
 # Temporary files
 *.tmp
