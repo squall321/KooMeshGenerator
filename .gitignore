@@ -87,8 +87,13 @@ docs/_templates/
 *.inp
 !tests/fixtures/**/*.inp
 
+# ANSYS output
+*.cdb
+!tests/fixtures/**/*.cdb
+
 # Example output directories
 abaqus_export_examples/
+ansys_export_examples/
 lsdyna_export_examples/
 
 # Temporary files
