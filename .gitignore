@@ -99,11 +99,20 @@ docs/_templates/
 *.op2
 !tests/fixtures/**/*.bdf
 
+# VTK output
+*.vtu
+*.vtk
+*.pvtu
+*.pvd
+!tests/fixtures/**/*.vtu
+!tests/fixtures/**/*.vtk
+
 # Example output directories
 abaqus_export_examples/
 ansys_export_examples/
 lsdyna_export_examples/
 nastran_export_examples/
+vtk_export_examples/
 
 # Temporary files
 *.tmp
