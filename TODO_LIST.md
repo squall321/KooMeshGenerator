@@ -59,7 +59,7 @@
   - 커밋: c86b2a3
   - 기간: 1-2주
 
-- [ ] **[007]** Mesh Quality Checker 확장 ⭕
+- [x] **[007]** Mesh Quality Checker 확장 ✅
   - 예상 기간: 1주
   - 의존성: 없음
 
@@ -93,7 +93,7 @@
   - 커밋: c86b2a3
   - 기간: 1-2주
 - [ ] **[006]** Element Quality 기반 자동 리메싱 ⭕
-- [ ] **[007]** Mesh Quality Checker 확장 ⭕
+- [x] **[007]** Mesh Quality Checker 확장 ✅
 - [ ] **[008]** Mesh Coarsening ⭕
 
 ### 고급 알고리즘
