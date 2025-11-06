@@ -135,6 +135,7 @@ gmsh_export_examples/
 calculix_export_examples/
 openfoam_export_examples/
 stl_export_examples/
+elmer_examples/
 
 # Temporary files
 *.tmp
