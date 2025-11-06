@@ -227,10 +227,17 @@ class QualityChecker:
 
         if elem.type == ElementType.TET4:
             return self._jacobian_tet4(coords)
+        elif elem.type == ElementType.TET10:
+            return self._jacobian_tet10(coords)
         elif elem.type == ElementType.HEX8:
             return self._jacobian_hex8(coords)
+        elif elem.type == ElementType.HEX20:
+            return self._jacobian_hex20(coords)
+        elif elem.type == ElementType.HEX27:
+            return self._jacobian_hex27(coords)
         else:
             # Default: compute volume as proxy for Jacobian
+            self.logger.warning(f"Jacobian not implemented for {elem.type.code}, using volume")
             return self._compute_volume(coords)
 
     def _jacobian_tet4(self, coords: np.ndarray) -> float:
@@ -554,3 +561,88 @@ class QualityChecker:
                 continue
 
         return bad_elements
+
+    def _jacobian_tet10(self, coords: np.ndarray) -> float:
+        """Compute minimum Jacobian for 10-node tetrahedron"""
+        from koomesh.meshing.shape_functions import tet10_shape_derivatives
+
+        min_jac = float('inf')
+
+        # Check at corner nodes and mid-side nodes
+        # Natural coordinates for sampling points
+        sampling_points = [
+            [0.0, 0.0, 0.0],  # Node 0
+            [1.0, 0.0, 0.0],  # Node 1
+            [0.0, 1.0, 0.0],  # Node 2
+            [0.0, 0.0, 1.0],  # Node 3
+            [0.5, 0.0, 0.0],  # Edge 0-1
+            [0.5, 0.5, 0.0],  # Edge 1-2
+            [0.0, 0.5, 0.0],  # Edge 2-0
+            [0.0, 0.0, 0.5],  # Edge 0-3
+            [0.5, 0.0, 0.5],  # Edge 1-3
+            [0.0, 0.5, 0.5],  # Edge 2-3
+            [0.25, 0.25, 0.25],  # Center
+        ]
+
+        for xi, eta, zeta in sampling_points:
+            dN_dxi = tet10_shape_derivatives(xi, eta, zeta)
+            J = dN_dxi @ coords
+            det_J = np.linalg.det(J)
+            min_jac = min(min_jac, det_J)
+
+        return min_jac
+
+    def _jacobian_hex20(self, coords: np.ndarray) -> float:
+        """Compute minimum Jacobian for 20-node hexahedron"""
+        from koomesh.meshing.shape_functions import hex20_shape_derivatives
+
+        min_jac = float('inf')
+
+        # Check at corner nodes and some mid-side points
+        # Natural coordinates of corner nodes
+        sampling_points = [
+            [-1, -1, -1], [1, -1, -1], [1, 1, -1], [-1, 1, -1],
+            [-1, -1, 1], [1, -1, 1], [1, 1, 1], [-1, 1, 1],
+            # Mid-side points
+            [0, -1, -1], [1, 0, -1], [0, 1, -1], [-1, 0, -1],
+            [0, -1, 1], [1, 0, 1], [0, 1, 1], [-1, 0, 1],
+            [-1, -1, 0], [1, -1, 0], [1, 1, 0], [-1, 1, 0],
+            [0, 0, 0],  # Center
+        ]
+
+        for xi, eta, zeta in sampling_points:
+            dN_dxi = hex20_shape_derivatives(xi, eta, zeta)
+            J = dN_dxi @ coords
+            det_J = np.linalg.det(J)
+            min_jac = min(min_jac, det_J)
+
+        return min_jac
+
+    def _jacobian_hex27(self, coords: np.ndarray) -> float:
+        """Compute minimum Jacobian for 27-node hexahedron"""
+        from koomesh.meshing.shape_functions import hex27_shape_derivatives
+
+        min_jac = float('inf')
+
+        # Check at corner nodes, mid-side, face centers, and volume center
+        sampling_points = [
+            # Corner nodes
+            [-1, -1, -1], [1, -1, -1], [1, 1, -1], [-1, 1, -1],
+            [-1, -1, 1], [1, -1, 1], [1, 1, 1], [-1, 1, 1],
+            # Mid-side edge nodes
+            [0, -1, -1], [1, 0, -1], [0, 1, -1], [-1, 0, -1],
+            [0, -1, 1], [1, 0, 1], [0, 1, 1], [-1, 0, 1],
+            [-1, -1, 0], [1, -1, 0], [1, 1, 0], [-1, 1, 0],
+            # Face center nodes
+            [0, 0, -1], [0, 0, 1], [0, -1, 0], [0, 1, 0], [-1, 0, 0], [1, 0, 0],
+            # Volume center
+            [0, 0, 0],
+        ]
+
+        for xi, eta, zeta in sampling_points:
+            dN_dxi = hex27_shape_derivatives(xi, eta, zeta)
+            J = dN_dxi @ coords
+            det_J = np.linalg.det(J)
+            min_jac = min(min_jac, det_J)
+
+        return min_jac

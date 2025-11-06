@@ -29,10 +29,11 @@ class ElementType(Enum):
     Finite element type enumeration
 
     Supported element types:
-    - TET4: 4-node tetrahedron
+    - TET4: 4-node tetrahedron (linear)
     - TET10: 10-node tetrahedron (quadratic)
-    - HEX8: 8-node hexahedron
-    - HEX20: 20-node hexahedron (quadratic)
+    - HEX8: 8-node hexahedron (linear)
+    - HEX20: 20-node hexahedron (quadratic, serendipity)
+    - HEX27: 27-node hexahedron (quadratic, full)
     - PYRAMID5: 5-node pyramid
     - PRISM6: 6-node prism/wedge
     - QUAD4: 4-node quadrilateral (2D)
@@ -42,6 +43,7 @@ class ElementType(Enum):
     TET10 = ("tet10", 10, "tetrahedron")
     HEX8 = ("hex8", 8, "hexahedron")
     HEX20 = ("hex20", 20, "hexahedron")
+    HEX27 = ("hex27", 27, "hexahedron")
     PYRAMID5 = ("pyramid5", 5, "pyramid")
     PRISM6 = ("prism6", 6, "prism")
     QUAD4 = ("quad4", 4, "quadrilateral")
@@ -64,7 +66,7 @@ class ElementType(Enum):
 
     def is_hex(self) -> bool:
         """Check if element is hexahedral"""
-        return self in [ElementType.HEX8, ElementType.HEX20]
+        return self in [ElementType.HEX8, ElementType.HEX20, ElementType.HEX27]
 
     def is_tet(self) -> bool:
         """Check if element is tetrahedral"""
@@ -138,7 +140,7 @@ class Element:
             List of node IDs forming the face
         """
         if self.type == ElementType.HEX8:
-            # Hex8 face definitions (0-indexed)
+            # Hex8 face definitions (0-indexed, corner nodes only)
             faces = [
                 [0, 3, 2, 1],  # Face 0: bottom (-Z)
                 [4, 5, 6, 7],  # Face 1: top (+Z)
@@ -150,13 +152,53 @@ class Element:
             if 0 <= face_id < 6:
                 return [self.nodes[i] for i in faces[face_id]]
 
+        elif self.type == ElementType.HEX20:
+            # Hex20 face definitions (corners + mid-side nodes)
+            # Node numbering: 0-7 corners, 8-19 mid-side edges
+            faces = [
+                [0, 3, 2, 1, 11, 10, 9, 8],     # Face 0: bottom (-Z)
+                [4, 5, 6, 7, 12, 13, 14, 15],   # Face 1: top (+Z)
+                [0, 1, 5, 4, 8, 17, 12, 16],    # Face 2: front (-Y)
+                [2, 3, 7, 6, 10, 19, 14, 18],   # Face 3: back (+Y)
+                [0, 4, 7, 3, 16, 15, 19, 11],   # Face 4: left (-X)
+                [1, 2, 6, 5, 9, 18, 13, 17],    # Face 5: right (+X)
+            ]
+            if 0 <= face_id < 6:
+                return [self.nodes[i] for i in faces[face_id]]
+
+        elif self.type == ElementType.HEX27:
+            # Hex27 face definitions (corners + mid-side + face center)
+            # Node numbering: 0-7 corners, 8-19 mid-side edges, 20-25 face centers, 26 volume center
+            faces = [
+                [0, 3, 2, 1, 11, 10, 9, 8, 20],     # Face 0: bottom (-Z)
+                [4, 5, 6, 7, 12, 13, 14, 15, 21],   # Face 1: top (+Z)
+                [0, 1, 5, 4, 8, 17, 12, 16, 22],    # Face 2: front (-Y)
+                [2, 3, 7, 6, 10, 19, 14, 18, 23],   # Face 3: back (+Y)
+                [0, 4, 7, 3, 16, 15, 19, 11, 24],   # Face 4: left (-X)
+                [1, 2, 6, 5, 9, 18, 13, 17, 25],    # Face 5: right (+X)
+            ]
+            if 0 <= face_id < 6:
+                return [self.nodes[i] for i in faces[face_id]]
+
         elif self.type == ElementType.TET4:
-            # Tet4 face definitions
+            # Tet4 face definitions (corner nodes only)
             faces = [
                 [0, 2, 1],  # Face 0
                 [0, 1, 3],  # Face 1
                 [1, 2, 3],  # Face 2
                 [2, 0, 3],  # Face 3
+            ]
+            if 0 <= face_id < 4:
+                return [self.nodes[i] for i in faces[face_id]]
+
+        elif self.type == ElementType.TET10:
+            # Tet10 face definitions (corners + mid-side nodes)
+            # Node numbering: 0-3 corners, 4-9 mid-side edges
+            faces = [
+                [0, 2, 1, 6, 5, 4],  # Face 0
+                [0, 1, 3, 4, 8, 7],  # Face 1
+                [1, 2, 3, 5, 9, 8],  # Face 2
+                [2, 0, 3, 6, 7, 9],  # Face 3
             ]
             if 0 <= face_id < 4:
                 return [self.nodes[i] for i in faces[face_id]]

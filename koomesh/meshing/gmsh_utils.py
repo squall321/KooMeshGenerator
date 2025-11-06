@@ -223,6 +223,23 @@ class GmshWrapper:
 
         self.logger.debug(f"Set {dimension}D mesh algorithm: {algorithm}")
 
+    def set_element_order(self, order: int = 1):
+        """
+        Set element order (1=linear, 2=quadratic)
+
+        Args:
+            order: Element order (1 or 2)
+
+        Notes:
+            Order 1: Linear elements (TET4, HEX8)
+            Order 2: Quadratic elements (TET10, HEX20, HEX27)
+        """
+        if order not in [1, 2]:
+            raise ValueError("Element order must be 1 (linear) or 2 (quadratic)")
+
+        gmsh.option.setNumber("Mesh.ElementOrder", order)
+        self.logger.debug(f"Set element order: {order} ({'quadratic' if order == 2 else 'linear'})")
+
     def set_recombine(self, enable: bool = True):
         """
         Enable/disable recombination (convert triangles to quads, tets to hexes)
@@ -360,21 +377,23 @@ class GmshWrapper:
         """
         Convert GMSH element type to ElementType
 
-        GMSH element types:
-        - 4: 4-node tetrahedron
-        - 5: 8-node hexahedron
-        - 11: 10-node tetrahedron
-        - 12: 27-node hexahedron (we map to HEX20)
-        - 7: 5-node pyramid
-        - 6: 6-node prism
+        GMSH element types (reference: GMSH documentation):
+        - 4: 4-node tetrahedron (TET4)
+        - 5: 8-node hexahedron (HEX8)
+        - 6: 6-node prism/wedge (PRISM6)
+        - 7: 5-node pyramid (PYRAMID5)
+        - 11: 10-node tetrahedron (TET10)
+        - 17: 20-node hexahedron (HEX20)
+        - 92: 27-node hexahedron (HEX27)
         """
         mapping = {
             4: ElementType.TET4,
             5: ElementType.HEX8,
-            11: ElementType.TET10,
-            12: ElementType.HEX20,  # Approximation
-            7: ElementType.PYRAMID5,
             6: ElementType.PRISM6,
+            7: ElementType.PYRAMID5,
+            11: ElementType.TET10,
+            17: ElementType.HEX20,
+            92: ElementType.HEX27,
         }
 
         return mapping.get(gmsh_type)

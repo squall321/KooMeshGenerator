@@ -136,34 +136,106 @@ class LSDynaWriter:
 
     def _write_hex_elements(self, mesh: MeshData, part_id: int):
         """Write hexahedral elements"""
+        from koomesh.meshing.mesh_data import ElementType
+
         self.file.write("*ELEMENT_SOLID\n")
-        self.file.write("$#   eid     pid      n1      n2      n3      n4      n5      n6      n7      n8\n")
 
-        for elem in mesh.elements.values():
-            self.file.write(f"{elem.id:8d}{part_id:8d}")
-            for nid in elem.nodes:
-                self.file.write(f"{nid:8d}")
-            self.file.write("\n")
+        if mesh.element_type == ElementType.HEX8:
+            self.file.write("$#   eid     pid      n1      n2      n3      n4      n5      n6      n7      n8\n")
+            for elem in mesh.elements.values():
+                self.file.write(f"{elem.id:8d}{part_id:8d}")
+                for nid in elem.nodes:
+                    self.file.write(f"{nid:8d}")
+                self.file.write("\n")
 
-        self.logger.info(f"Wrote {mesh.num_elements()} hexahedral elements")
+        elif mesh.element_type == ElementType.HEX20:
+            self.file.write("$# HEX20: 20-node hexahedron (quadratic)\n")
+            self.file.write("$#   eid     pid      n1      n2      n3      n4      n5      n6      n7      n8\n")
+            for elem in mesh.elements.values():
+                # Line 1: eid, pid, n1-n8 (corner nodes)
+                self.file.write(f"{elem.id:8d}{part_id:8d}")
+                for nid in elem.nodes[0:8]:
+                    self.file.write(f"{nid:8d}")
+                self.file.write("\n")
+                # Line 2: n9-n16 (mid-side nodes)
+                self.file.write(" " * 16)  # Blank for eid and pid
+                for nid in elem.nodes[8:16]:
+                    self.file.write(f"{nid:8d}")
+                self.file.write("\n")
+                # Line 3: n17-n20 (remaining mid-side nodes)
+                self.file.write(" " * 16)
+                for nid in elem.nodes[16:20]:
+                    self.file.write(f"{nid:8d}")
+                self.file.write("\n")
+
+        elif mesh.element_type == ElementType.HEX27:
+            self.file.write("$# HEX27: 27-node hexahedron (quadratic, full)\n")
+            self.file.write("$#   eid     pid      n1      n2      n3      n4      n5      n6      n7      n8\n")
+            for elem in mesh.elements.values():
+                # Line 1: eid, pid, n1-n8 (corner nodes)
+                self.file.write(f"{elem.id:8d}{part_id:8d}")
+                for nid in elem.nodes[0:8]:
+                    self.file.write(f"{nid:8d}")
+                self.file.write("\n")
+                # Line 2: n9-n16 (mid-side nodes)
+                self.file.write(" " * 16)
+                for nid in elem.nodes[8:16]:
+                    self.file.write(f"{nid:8d}")
+                self.file.write("\n")
+                # Line 3: n17-n24 (more mid-side nodes)
+                self.file.write(" " * 16)
+                for nid in elem.nodes[16:24]:
+                    self.file.write(f"{nid:8d}")
+                self.file.write("\n")
+                # Line 4: n25-n27 (face center and volume center nodes)
+                self.file.write(" " * 16)
+                for nid in elem.nodes[24:27]:
+                    self.file.write(f"{nid:8d}")
+                self.file.write("\n")
+
+        else:
+            self.logger.warning(f"Unsupported hex element type: {mesh.element_type.code}")
+
+        self.logger.info(f"Wrote {mesh.num_elements()} hexahedral elements ({mesh.element_type.code})")
 
     def _write_tet_elements(self, mesh: MeshData, part_id: int):
         """Write tetrahedral elements"""
+        from koomesh.meshing.mesh_data import ElementType
+
         self.file.write("*ELEMENT_SOLID\n")
-        self.file.write("$#   eid     pid      n1      n2      n3      n4      n5      n6      n7      n8\n")
 
-        for elem in mesh.elements.values():
-            self.file.write(f"{elem.id:8d}{part_id:8d}")
-            # For tet4, write 4 nodes + repeat last node for remaining positions
-            for nid in elem.nodes:
-                self.file.write(f"{nid:8d}")
-            # Fill remaining positions with last node
-            last_node = elem.nodes[-1]
-            for _ in range(8 - len(elem.nodes)):
-                self.file.write(f"{last_node:8d}")
-            self.file.write("\n")
+        if mesh.element_type == ElementType.TET4:
+            self.file.write("$#   eid     pid      n1      n2      n3      n4      n5      n6      n7      n8\n")
+            for elem in mesh.elements.values():
+                self.file.write(f"{elem.id:8d}{part_id:8d}")
+                # For tet4, write 4 nodes + repeat last node for remaining positions
+                for nid in elem.nodes:
+                    self.file.write(f"{nid:8d}")
+                # Fill remaining positions with last node (LS-DYNA convention)
+                last_node = elem.nodes[-1]
+                for _ in range(8 - len(elem.nodes)):
+                    self.file.write(f"{last_node:8d}")
+                self.file.write("\n")
 
-        self.logger.info(f"Wrote {mesh.num_elements()} tetrahedral elements")
+        elif mesh.element_type == ElementType.TET10:
+            self.file.write("$# TET10: 10-node tetrahedron (quadratic)\n")
+            self.file.write("$#   eid     pid      n1      n2      n3      n4      n5      n6      n7      n8\n")
+            for elem in mesh.elements.values():
+                # Line 1: eid, pid, n1-n4 (corner nodes) + n5-n8 (first 4 mid-side nodes)
+                self.file.write(f"{elem.id:8d}{part_id:8d}")
+                for nid in elem.nodes[0:8]:
+                    self.file.write(f"{nid:8d}")
+                self.file.write("\n")
+                # Line 2: n9-n10 (remaining mid-side nodes)
+                self.file.write(" " * 16)  # Blank for eid and pid
+                for nid in elem.nodes[8:10]:
+                    self.file.write(f"{nid:8d}")
+                self.file.write("\n")
+
+        else:
+            self.logger.warning(f"Unsupported tet element type: {mesh.element_type.code}")
+
+        self.logger.info(f"Wrote {mesh.num_elements()} tetrahedral elements ({mesh.element_type.code})")
 
     def write_parts(self, hierarchy: HierarchyNode):
         """
