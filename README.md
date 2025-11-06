@@ -29,13 +29,30 @@ STEP File → Geometry Analysis → Mesh Classification → Mesh Generation → 
 
 ## Installation
 
-### Prerequisites
+### Option 1: Apptainer/Singularity (Recommended for HPC)
 
+**Fastest way to get started - zero configuration needed!**
+
+```bash
+# Clone the repository
+git clone https://github.com/yourorg/KooMeshGenerator.git
+cd KooMeshGenerator
+
+# Build container (one-time, 10-20 minutes)
+./apptainer/build.sh
+
+# Use immediately
+apptainer run koomesh.sif generate model.step -s 2.0 -o output.k
+```
+
+See [apptainer/README.md](apptainer/README.md) for detailed usage.
+
+### Option 2: Manual Installation
+
+**Prerequisites:**
 - Python 3.9 or higher
 - PythonOCC (OpenCASCADE)
 - GMSH
-
-### Quick Install
 
 ```bash
 # Clone the repository

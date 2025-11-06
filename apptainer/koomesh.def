@@ -1,0 +1,97 @@
+Bootstrap: docker
+From: ubuntu:22.04
+
+%labels
+    Author KooMesh Development Team
+    Version 1.0
+    Description KooMeshGenerator - Automated mesh generation from STEP files
+
+%help
+    KooMeshGenerator - Automated Mesh Generation System
+
+    Usage:
+        # Generate mesh from STEP file
+        apptainer run koomesh.sif generate model.step -s 2.0 -o output.k
+
+        # Batch processing
+        apptainer run koomesh.sif batch input_dir/ output_dir/ -s 1.0
+
+        # Interactive shell
+        apptainer shell koomesh.sif
+
+    More info: https://github.com/yourrepo/KooMeshGenerator
+
+%environment
+    export LC_ALL=C
+    export PYTHONPATH=/opt/KooMeshGenerator:$PYTHONPATH
+    export PATH=/opt/KooMeshGenerator/bin:$PATH
+
+%post
+    # Update and install system dependencies
+    apt-get update -y
+    DEBIAN_FRONTEND=noninteractive apt-get install -y \
+        build-essential \
+        cmake \
+        git \
+        python3 \
+        python3-pip \
+        python3-dev \
+        libglu1-mesa \
+        libglu1-mesa-dev \
+        libgl1-mesa-dev \
+        libglx-dev \
+        libxcursor1 \
+        libxinerama1 \
+        libxi6 \
+        libxrandr2 \
+        wget \
+        vim \
+        && rm -rf /var/lib/apt/lists/*
+
+    # Install Python packages
+    pip3 install --no-cache-dir \
+        numpy \
+        scipy \
+        pytest \
+        click \
+        pyyaml \
+        psutil \
+        gmsh \
+        cadquery \
+        cadquery-ocp
+
+    # Create working directory
+    mkdir -p /opt/KooMeshGenerator
+    mkdir -p /work
+
+    # Copy KooMesh source code (will be bound at build time)
+    # Source will be mounted during build
+
+%runscript
+    # Default: run koomesh CLI
+    cd /opt/KooMeshGenerator
+    python3 -m koomesh.cli.main "$@"
+
+%startscript
+    echo "KooMeshGenerator container started"
+
+%test
+    # Test that Python works
+    python3 --version
+
+    # Test that required packages are installed
+    python3 -c "import numpy; print('NumPy OK')"
+    python3 -c "import scipy; print('SciPy OK')"
+    python3 -c "import gmsh; print('GMSH OK')"
+    python3 -c "import cadquery; print('CadQuery OK')"
+
+    # Test KooMesh imports
+    cd /opt/KooMeshGenerator
+    python3 -c "from koomesh.config import KooMeshConfig; print('KooMesh OK')"
+
+%files
+    # These files will be copied during build
+    # koomesh /opt/KooMeshGenerator/koomesh
+    # tests /opt/KooMeshGenerator/tests
+    # setup.py /opt/KooMeshGenerator/setup.py
+    # README.md /opt/KooMeshGenerator/README.md
