@@ -329,21 +329,132 @@ class TetMesher:
 
     def coarsen_mesh(self, mesh: MeshData, coarsening_factor: float = 0.5) -> MeshData:
         """
-        Coarsen tetrahedral mesh
+        Coarsen tetrahedral mesh using vertex clustering
+
+        This method reduces the number of elements by clustering nearby vertices
+        and merging them. The coarsening_factor controls how aggressive the
+        coarsening is.
 
         Args:
             mesh: Input mesh to coarsen
             coarsening_factor: Factor by which to coarsen (0.5 = half as many elements)
+                             Smaller values = more aggressive coarsening
 
         Returns:
             Coarsened MeshData
+
+        Example:
+            >>> coarsened = mesher.coarsen_mesh(mesh, coarsening_factor=0.3)
         """
         self.logger.info(f"Coarsening tetrahedral mesh by factor {coarsening_factor}")
 
-        # For now, return original mesh
-        self.logger.warning("Mesh coarsening not yet fully implemented")
+        if coarsening_factor >= 1.0:
+            self.logger.warning("Coarsening factor >= 1.0, returning original mesh")
+            return mesh
 
-        return mesh
+        if mesh.num_nodes() == 0 or mesh.num_elements() == 0:
+            self.logger.warning("Empty mesh, returning original")
+            return mesh
+
+        # Calculate bounding box
+        coords = mesh.get_node_coordinates()
+        min_coords = np.min(coords, axis=0)
+        max_coords = np.max(coords, axis=0)
+        bbox_size = max_coords - min_coords
+
+        # Determine grid cell size based on coarsening factor
+        # Smaller coarsening_factor -> larger cells -> more aggressive coarsening
+        avg_bbox = np.mean(bbox_size)
+        num_cells_per_dim = int(np.power(mesh.num_nodes() * coarsening_factor, 1/3))
+        num_cells_per_dim = max(num_cells_per_dim, 2)  # At least 2 cells per dimension
+
+        cell_size = bbox_size / num_cells_per_dim
+
+        self.logger.debug(
+            f"Grid: {num_cells_per_dim}^3 cells, "
+            f"cell size: [{cell_size[0]:.3f}, {cell_size[1]:.3f}, {cell_size[2]:.3f}]"
+        )
+
+        # Assign each node to a grid cell and cluster
+        node_to_cluster = {}  # Maps old node ID to cluster ID
+        cluster_nodes = {}    # Maps cluster ID to list of node IDs in that cluster
+        cluster_centers = {}  # Maps cluster ID to center coordinates
+
+        for node_id, node in mesh.nodes.items():
+            # Compute grid cell indices
+            cell_i = int((node.x - min_coords[0]) / cell_size[0])
+            cell_j = int((node.y - min_coords[1]) / cell_size[1])
+            cell_k = int((node.z - min_coords[2]) / cell_size[2])
+
+            # Handle edge case where node is exactly at max boundary
+            cell_i = min(cell_i, num_cells_per_dim - 1)
+            cell_j = min(cell_j, num_cells_per_dim - 1)
+            cell_k = min(cell_k, num_cells_per_dim - 1)
+
+            # Create cluster ID from cell indices
+            cluster_id = (cell_i, cell_j, cell_k)
+
+            node_to_cluster[node_id] = cluster_id
+
+            if cluster_id not in cluster_nodes:
+                cluster_nodes[cluster_id] = []
+            cluster_nodes[cluster_id].append(node_id)
+
+        # Compute cluster centers (average of all nodes in cluster)
+        for cluster_id, node_ids in cluster_nodes.items():
+            center = np.zeros(3)
+            for nid in node_ids:
+                node = mesh.nodes[nid]
+                center += np.array([node.x, node.y, node.z])
+            center /= len(node_ids)
+            cluster_centers[cluster_id] = center
+
+        self.logger.debug(f"Created {len(cluster_nodes)} clusters from {mesh.num_nodes()} nodes")
+
+        # Create new mesh with clustered nodes
+        new_mesh = MeshData(element_type=mesh.element_type)
+        cluster_to_new_node = {}  # Maps cluster ID to new node ID
+
+        # Add clustered nodes
+        for cluster_id, center in cluster_centers.items():
+            new_node_id = new_mesh.add_node(center[0], center[1], center[2])
+            cluster_to_new_node[cluster_id] = new_node_id
+
+        # Map old node IDs to new node IDs
+        old_to_new_node = {}
+        for old_node_id, cluster_id in node_to_cluster.items():
+            old_to_new_node[old_node_id] = cluster_to_new_node[cluster_id]
+
+        # Add elements with updated connectivity
+        num_degenerate = 0
+        for elem_id, elem in mesh.elements.items():
+            # Map old node IDs to new node IDs
+            new_node_ids = [old_to_new_node[nid] for nid in elem.nodes]
+
+            # Check for degenerate elements (elements with duplicate nodes)
+            if len(set(new_node_ids)) < len(new_node_ids):
+                num_degenerate += 1
+                continue  # Skip degenerate elements
+
+            # Add element with new connectivity
+            new_mesh.add_element(
+                new_node_ids,
+                element_type=elem.type,
+                part_id=elem.part_id,
+                metadata=elem.metadata.copy()
+            )
+
+        # Copy metadata
+        new_mesh.metadata = mesh.metadata.copy()
+
+        self.logger.info(
+            f"Coarsening complete: {mesh.num_nodes()} -> {new_mesh.num_nodes()} nodes, "
+            f"{mesh.num_elements()} -> {new_mesh.num_elements()} elements"
+        )
+        if num_degenerate > 0:
+            self.logger.debug(f"Removed {num_degenerate} degenerate elements")
+
+        return new_mesh
 
 
 class AdaptiveTetMesher(TetMesher):

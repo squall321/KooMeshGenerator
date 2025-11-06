@@ -11,12 +11,29 @@ KooMeshGenerator is a comprehensive tool for automatic mesh generation from STEP
 
 ### Key Features
 
+#### Core Meshing
 - ✅ **Automatic Geometry Classification**: Analyzes STEP files to determine optimal mesh strategy
 - ✅ **Hexahedral Mesh Priority**: Generates structured hex meshes when geometry permits
 - ✅ **Tetrahedral Fallback**: Automatically switches to tet mesh for complex geometries
 - ✅ **Hybrid Meshing**: Combines hex and tet elements intelligently
+- ✅ **Boundary Layer Meshing**: Generate boundary layers for CFD applications
+- ✅ **Mesh Coarsening**: Reduce mesh density using vertex clustering algorithms
+
+#### Mesh Utilities
+- ✅ **Mesh Copy & Merge**: Copy meshes and merge multiple meshes with tolerance-based deduplication
+- ✅ **Mesh Transformation**: Translate, scale, rotate, and mirror mesh geometries
+- ✅ **Mesh Repair**: Fix degenerate elements and quality issues
+- ✅ **Mesh Partitioning**: Partition meshes for parallel computation
+
+#### Contact & Analysis
+- ✅ **Contact Surface Detection**: Automatically detect contact surfaces between parts
 - ✅ **Hierarchy-Based Contact**: Automatic contact generation based on assembly structure
+- ✅ **Quality Metrics**: Comprehensive mesh quality analysis
+
+#### Format Support
 - ✅ **LS-DYNA Output**: Direct output to LS-DYNA keyword format
+- ✅ **Multi-Format Export**: VTK, Abaqus INP, Nastran BDF, STL, PLY, OBJ
+- ✅ **Format Conversion**: Convert between different mesh formats
 - ✅ **Cross-Platform**: Linux and Windows support
 
 ## Architecture
@@ -109,19 +126,60 @@ koomesh generate assembly.step --mesh-size 2.0 -o output.k
 
 ### Advanced Options
 
+#### Mesh Coarsening
 ```python
-from koomesh.geometry.shape_classifier import ShapeClassifier
-from koomesh.io.step_reader import STEPReader
+from koomesh.meshing.tet_mesher import TetMesher
 
-# Read STEP file
-reader = STEPReader()
-shape = reader.read_file('complex_part.step')
+# Coarsen an existing mesh
+mesher = TetMesher()
+coarsened_mesh = mesher.coarsen_mesh(mesh, coarsening_factor=0.5)
+# Factor 0.5 = approximately half as many elements
+```
 
-# Classify geometry
-classifier = ShapeClassifier()
-mesh_type = classifier.classify(shape)
+#### Mesh Utilities
+```python
+from koomesh.utils.mesh_copy import copy_mesh
+from koomesh.utils.mesh_merge import merge_meshes, merge_meshes_with_tolerance
+from koomesh.utils.mesh_transform import translate_mesh, scale_mesh
 
-print(f"Recommended mesh type: {mesh_type.value}")
+# Copy mesh
+mesh_copy = copy_mesh(original_mesh)
+
+# Merge multiple meshes
+merged = merge_meshes([mesh1, mesh2, mesh3])
+
+# Merge with tolerance (eliminates duplicate nodes)
+merged = merge_meshes_with_tolerance([mesh1, mesh2], tolerance=1e-6)
+
+# Transform mesh
+translate_mesh(mesh, dx=10.0, dy=5.0)
+scale_mesh(mesh, sx=2.0, sy=2.0, sz=2.0)
+```
+
+#### Contact Surface Detection
+```python
+from koomesh.utils.contact_detection import ContactSurfaceDetector
+
+# Detect contact surfaces between parts
+detector = ContactSurfaceDetector()
+contacts = detector.detect_contacts(mesh, tolerance=0.1)
+
+# Export contact definitions
+detector.export_contact_pairs(contacts, "contacts.inp", format="abaqus")
+```
+
+#### Format Conversion
+```python
+from koomesh.io.format_converter import MeshFormatConverter
+
+# Convert between formats
+converter = MeshFormatConverter()
+converter.export_vtk(mesh, "output.vtk")
+converter.export_abaqus(mesh, "output.inp")
+converter.export_nastran(mesh, "output.bdf")
+
+# Import from VTK
+mesh = converter.import_from_vtk("input.vtk")
 ```
 
 ## Project Structure
