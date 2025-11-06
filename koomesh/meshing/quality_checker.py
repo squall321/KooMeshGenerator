@@ -235,6 +235,10 @@ class QualityChecker:
             return self._jacobian_hex20(coords)
         elif elem.type == ElementType.HEX27:
             return self._jacobian_hex27(coords)
+        elif elem.type == ElementType.PRISM6:
+            return self._jacobian_prism6(coords)
+        elif elem.type == ElementType.PYRAMID5:
+            return self._jacobian_pyramid5(coords)
         else:
             # Default: compute volume as proxy for Jacobian
             self.logger.warning(f"Jacobian not implemented for {elem.type.code}, using volume")
@@ -641,6 +645,61 @@ class QualityChecker:
 
         for xi, eta, zeta in sampling_points:
             dN_dxi = hex27_shape_derivatives(xi, eta, zeta)
+            J = dN_dxi @ coords
+            det_J = np.linalg.det(J)
+            min_jac = min(min_jac, det_J)
+
+        return min_jac
+
+    def _jacobian_prism6(self, coords: np.ndarray) -> float:
+        """Compute minimum Jacobian for 6-node prism"""
+        from koomesh.meshing.shape_functions import prism6_shape_derivatives
+
+        min_jac = float('inf')
+
+        # Check at corner nodes and mid-points
+        sampling_points = [
+            # Bottom triangle corners
+            [0.0, 0.0, -1.0], [1.0, 0.0, -1.0], [0.0, 1.0, -1.0],
+            # Top triangle corners
+            [0.0, 0.0, 1.0], [1.0, 0.0, 1.0], [0.0, 1.0, 1.0],
+            # Mid-height points
+            [0.0, 0.0, 0.0], [1.0, 0.0, 0.0], [0.0, 1.0, 0.0],
+            # Center points
+            [0.33, 0.33, -1.0], [0.33, 0.33, 0.0], [0.33, 0.33, 1.0],
+        ]
+
+        for xi, eta, zeta in sampling_points:
+            dN_dxi = prism6_shape_derivatives(xi, eta, zeta)
+            J = dN_dxi @ coords
+            det_J = np.linalg.det(J)
+            min_jac = min(min_jac, det_J)
+
+        return min_jac
+
+    def _jacobian_pyramid5(self, coords: np.ndarray) -> float:
+        """Compute minimum Jacobian for 5-node pyramid"""
+        from koomesh.meshing.shape_functions import pyramid5_shape_derivatives
+
+        min_jac = float('inf')
+
+        # Check at base corners and mid-height points
+        # Note: Avoid apex (zeta=1) where derivatives are undefined
+        sampling_points = [
+            # Base corners
+            [-1.0, -1.0, 0.0], [1.0, -1.0, 0.0], [1.0, 1.0, 0.0], [-1.0, 1.0, 0.0],
+            # Mid-height points
+            [-0.5, -0.5, 0.5], [0.5, -0.5, 0.5], [0.5, 0.5, 0.5], [-0.5, 0.5, 0.5],
+            # Base center
+            [0.0, 0.0, 0.0],
+            # Mid-height center
+            [0.0, 0.0, 0.5],
+            # Near apex (but not at apex to avoid singularity)
+            [0.0, 0.0, 0.9],
+        ]
+
+        for xi, eta, zeta in sampling_points:
+            dN_dxi = pyramid5_shape_derivatives(xi, eta, zeta)
             J = dN_dxi @ coords
             det_J = np.linalg.det(J)
             min_jac = min(min_jac, det_J)

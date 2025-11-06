@@ -203,6 +203,32 @@ class Element:
             if 0 <= face_id < 4:
                 return [self.nodes[i] for i in faces[face_id]]
 
+        elif self.type == ElementType.PRISM6:
+            # Prism6 face definitions
+            # Node numbering: bottom triangle 0-2, top triangle 3-5
+            faces = [
+                [0, 2, 1],        # Face 0: bottom triangle (-Z)
+                [3, 4, 5],        # Face 1: top triangle (+Z)
+                [0, 1, 4, 3],     # Face 2: rectangular side
+                [1, 2, 5, 4],     # Face 3: rectangular side
+                [2, 0, 3, 5],     # Face 4: rectangular side
+            ]
+            if 0 <= face_id < 5:
+                return [self.nodes[i] for i in faces[face_id]]
+
+        elif self.type == ElementType.PYRAMID5:
+            # Pyramid5 face definitions
+            # Node numbering: base 0-3 (square), apex 4
+            faces = [
+                [0, 3, 2, 1],     # Face 0: base (square)
+                [0, 1, 4],        # Face 1: triangular side
+                [1, 2, 4],        # Face 2: triangular side
+                [2, 3, 4],        # Face 3: triangular side
+                [3, 0, 4],        # Face 4: triangular side
+            ]
+            if 0 <= face_id < 5:
+                return [self.nodes[i] for i in faces[face_id]]
+
         raise ValueError(f"Invalid face_id {face_id} for element type {self.type.code}")
 
     def num_faces(self) -> int:

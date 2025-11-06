@@ -126,10 +126,16 @@ class LSDynaWriter:
             mesh: Mesh containing elements
             part_id: Part ID for elements
         """
+        from koomesh.meshing.mesh_data import ElementType
+
         if mesh.element_type.is_hex():
             self._write_hex_elements(mesh, part_id)
         elif mesh.element_type.is_tet():
             self._write_tet_elements(mesh, part_id)
+        elif mesh.element_type == ElementType.PRISM6:
+            self._write_prism_elements(mesh, part_id)
+        elif mesh.element_type == ElementType.PYRAMID5:
+            self._write_pyramid_elements(mesh, part_id)
         else:
             self.logger.warning(f"Element type {mesh.element_type.code} not fully supported")
             self._write_hex_elements(mesh, part_id)  # Fallback
@@ -236,6 +242,44 @@ class LSDynaWriter:
             self.logger.warning(f"Unsupported tet element type: {mesh.element_type.code}")
 
         self.logger.info(f"Wrote {mesh.num_elements()} tetrahedral elements ({mesh.element_type.code})")
+
+    def _write_prism_elements(self, mesh: MeshData, part_id: int):
+        """Write prism/wedge elements"""
+        self.file.write("*ELEMENT_SOLID\n")
+        self.file.write("$# PRISM6: 6-node prism/wedge element\n")
+        self.file.write("$#   eid     pid      n1      n2      n3      n4      n5      n6      n7      n8\n")
+
+        for elem in mesh.elements.values():
+            self.file.write(f"{elem.id:8d}{part_id:8d}")
+            # Write 6 prism nodes + repeat last 2 nodes for padding
+            for nid in elem.nodes:
+                self.file.write(f"{nid:8d}")
+            # Fill remaining 2 positions with last node (LS-DYNA convention)
+            last_node = elem.nodes[-1]
+            for _ in range(8 - len(elem.nodes)):
+                self.file.write(f"{last_node:8d}")
+            self.file.write("\n")
+
+        self.logger.info(f"Wrote {mesh.num_elements()} prism elements")
+
+    def _write_pyramid_elements(self, mesh: MeshData, part_id: int):
+        """Write pyramid elements"""
+        self.file.write("*ELEMENT_SOLID\n")
+        self.file.write("$# PYRAMID5: 5-node pyramid element\n")
+        self.file.write("$#   eid     pid      n1      n2      n3      n4      n5      n6      n7      n8\n")
+
+        for elem in mesh.elements.values():
+            self.file.write(f"{elem.id:8d}{part_id:8d}")
+            # Write 5 pyramid nodes + repeat last 3 nodes for padding
+            for nid in elem.nodes:
+                self.file.write(f"{nid:8d}")
+            # Fill remaining 3 positions with last node (LS-DYNA convention)
+            last_node = elem.nodes[-1]
+            for _ in range(8 - len(elem.nodes)):
+                self.file.write(f"{last_node:8d}")
+            self.file.write("\n")
+
+        self.logger.info(f"Wrote {mesh.num_elements()} pyramid elements")
 
     def write_parts(self, hierarchy: HierarchyNode):
         """

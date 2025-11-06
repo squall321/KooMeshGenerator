@@ -607,6 +607,159 @@ def tet10_shape_derivatives(xi: float, eta: float, zeta: float) -> np.ndarray:
 
 
 # ============================================================================
+# PRISM6 - 6-node prism/wedge (linear)
+# ============================================================================
+
+def prism6_shape_functions(xi: float, eta: float, zeta: float) -> np.ndarray:
+    """
+    PRISM6 shape functions
+
+    Args:
+        xi, eta: Natural coordinates for triangular base (0 to 1, xi+eta <= 1)
+        zeta: Natural coordinate for height (-1 to 1)
+
+    Returns:
+        Array of 6 shape function values
+
+    Node numbering:
+        Bottom triangle: 0, 1, 2
+        Top triangle: 3, 4, 5
+    """
+    N = np.zeros(6)
+
+    # Bottom triangle nodes
+    N[0] = 0.5 * (1 - xi - eta) * (1 - zeta)
+    N[1] = 0.5 * xi * (1 - zeta)
+    N[2] = 0.5 * eta * (1 - zeta)
+
+    # Top triangle nodes
+    N[3] = 0.5 * (1 - xi - eta) * (1 + zeta)
+    N[4] = 0.5 * xi * (1 + zeta)
+    N[5] = 0.5 * eta * (1 + zeta)
+
+    return N
+
+
+def prism6_shape_derivatives(xi: float, eta: float, zeta: float) -> np.ndarray:
+    """
+    PRISM6 shape function derivatives
+
+    Args:
+        xi, eta, zeta: Natural coordinates
+
+    Returns:
+        Array of shape (3, 6) with derivatives
+    """
+    dN = np.zeros((3, 6))
+
+    # dN/dxi
+    dN[0, 0] = -0.5 * (1 - zeta)
+    dN[0, 1] =  0.5 * (1 - zeta)
+    dN[0, 2] =  0.0
+    dN[0, 3] = -0.5 * (1 + zeta)
+    dN[0, 4] =  0.5 * (1 + zeta)
+    dN[0, 5] =  0.0
+
+    # dN/deta
+    dN[1, 0] = -0.5 * (1 - zeta)
+    dN[1, 1] =  0.0
+    dN[1, 2] =  0.5 * (1 - zeta)
+    dN[1, 3] = -0.5 * (1 + zeta)
+    dN[1, 4] =  0.0
+    dN[1, 5] =  0.5 * (1 + zeta)
+
+    # dN/dzeta
+    dN[2, 0] = -0.5 * (1 - xi - eta)
+    dN[2, 1] = -0.5 * xi
+    dN[2, 2] = -0.5 * eta
+    dN[2, 3] =  0.5 * (1 - xi - eta)
+    dN[2, 4] =  0.5 * xi
+    dN[2, 5] =  0.5 * eta
+
+    return dN
+
+
+# ============================================================================
+# PYRAMID5 - 5-node pyramid (linear)
+# ============================================================================
+
+def pyramid5_shape_functions(xi: float, eta: float, zeta: float) -> np.ndarray:
+    """
+    PYRAMID5 shape functions
+
+    Args:
+        xi, eta: Natural coordinates for base (-1 to 1)
+        zeta: Natural coordinate for height (0 to 1, apex at zeta=1)
+
+    Returns:
+        Array of 5 shape function values
+
+    Node numbering:
+        Base nodes: 0, 1, 2, 3 (counter-clockwise)
+        Apex node: 4
+    """
+    N = np.zeros(5)
+
+    # Special handling at apex (zeta = 1)
+    if abs(zeta - 1.0) < 1e-10:
+        N[0] = N[1] = N[2] = N[3] = 0.0
+        N[4] = 1.0
+        return N
+
+    # Base nodes (bilinear interpolation scaled by (1-zeta))
+    N[0] = 0.25 * (1 - xi) * (1 - eta) * (1 - zeta)
+    N[1] = 0.25 * (1 + xi) * (1 - eta) * (1 - zeta)
+    N[2] = 0.25 * (1 + xi) * (1 + eta) * (1 - zeta)
+    N[3] = 0.25 * (1 - xi) * (1 + eta) * (1 - zeta)
+
+    # Apex node
+    N[4] = zeta
+
+    return N
+
+
+def pyramid5_shape_derivatives(xi: float, eta: float, zeta: float) -> np.ndarray:
+    """
+    PYRAMID5 shape function derivatives
+
+    Args:
+        xi, eta, zeta: Natural coordinates
+
+    Returns:
+        Array of shape (3, 5) with derivatives
+    """
+    dN = np.zeros((3, 5))
+
+    # Special handling at apex
+    if abs(zeta - 1.0) < 1e-10:
+        # Derivatives are undefined at apex, return zeros
+        return dN
+
+    # dN/dxi
+    dN[0, 0] = -0.125 * (1 - eta) * (1 - zeta)
+    dN[0, 1] =  0.125 * (1 - eta) * (1 - zeta)
+    dN[0, 2] =  0.125 * (1 + eta) * (1 - zeta)
+    dN[0, 3] = -0.125 * (1 + eta) * (1 - zeta)
+    dN[0, 4] =  0.0
+
+    # dN/deta
+    dN[1, 0] = -0.125 * (1 - xi) * (1 - zeta)
+    dN[1, 1] = -0.125 * (1 + xi) * (1 - zeta)
+    dN[1, 2] =  0.125 * (1 + xi) * (1 - zeta)
+    dN[1, 3] =  0.125 * (1 - xi) * (1 - zeta)
+    dN[1, 4] =  0.0
+
+    # dN/dzeta
+    dN[2, 0] = -0.125 * (1 - xi) * (1 - eta)
+    dN[2, 1] = -0.125 * (1 + xi) * (1 - eta)
+    dN[2, 2] = -0.125 * (1 + xi) * (1 + eta)
+    dN[2, 3] = -0.125 * (1 - xi) * (1 + eta)
+    dN[2, 4] =  1.0
+
+    return dN
+
+
+# ============================================================================
 # Utility functions
 # ============================================================================
 
@@ -615,7 +768,7 @@ def get_shape_functions(element_type: str):
     Get shape functions for a given element type
 
     Args:
-        element_type: Element type code (e.g., 'hex8', 'hex20', 'tet10')
+        element_type: Element type code (e.g., 'hex8', 'hex20', 'tet10', 'prism6', 'pyramid5')
 
     Returns:
         Tuple of (shape_function, shape_derivatives) callables
@@ -626,6 +779,8 @@ def get_shape_functions(element_type: str):
         'hex27': (hex27_shape_functions, hex27_shape_derivatives),
         'tet4': (tet4_shape_functions, tet4_shape_derivatives),
         'tet10': (tet10_shape_functions, tet10_shape_derivatives),
+        'prism6': (prism6_shape_functions, prism6_shape_derivatives),
+        'pyramid5': (pyramid5_shape_functions, pyramid5_shape_derivatives),
     }
 
     if element_type.lower() not in shape_funcs:
