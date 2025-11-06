@@ -1646,6 +1646,28 @@ with CalculixWriter('compression.inp', title="Compression Test") as writer:
 - **Total**: ~1,271 lines
 - **Test Pass Rate**: 100% (22/22)
 
+
+### [021] OpenFOAM polyMesh Export
+**완료일**: 2025-11-06
+**커밋**: `f248722`
+**개발 기간**: ~1일
+
+#### 구현 내용
+- **OpenFOAM polyMesh Format**:
+  - Face-based mesh format for CFD
+  - constant/polyMesh directory structure
+  - points, faces, owner, neighbour, boundary files
+  - Automatic face extraction from volumetric elements
+  - Internal/boundary face detection
+
+- **Element Support**: HEX8/20/27, TET4/10, PRISM6, PYRAMID5
+- **Features**: Boundary patches, internal face sharing, CFD-ready format
+
+#### 통계
+- **Core Implementation**: 413 lines
+- **Test Coverage**: 616 lines (25 tests, 100% pass)
+- **Demo Code**: 370 lines (6 demos)
+
 ---
 
 ### [017] VTK Export (.vtu and .vtk formats)
@@ -2743,13 +2765,14 @@ gmsh_export_examples/
 ## 📊 통계
 
 ### 코드 기여
-- **추가된 라인**: ~23,420 lines
-- **새 파일**: 42개
+- **추가된 라인**: ~24,810 lines
+- **새 파일**: 45개
 - **수정된 파일**: 8개
-- **테스트 케이스**: 277+ 개 (모두 통과)
+- **테스트 케이스**: 302+ 개 (모두 통과)
 
 ### Git History
 ```bash
+f248722 - Implement OpenFOAM polyMesh Export
 941f0e5 - Implement [016] CalculiX (.inp) Export
 00d13ad - Implement [018] Gmsh (.msh) Import/Export Enhancement
 df78303 - Implement [020] Exodus II (.exo) Export
@@ -2770,11 +2793,11 @@ c304b88 - Add comprehensive future development ideas documentation
 ```
 
 ### 진행률
-- **완료된 항목**: 14/152 (9.2%)
+- **완료된 항목**: 15/152 (9.9%)
 - **개발 기간**: 약 6-8주
 - **라인/주**: ~2,000 lines
 - **카테고리 1 (메시 품질)**: 50.0% 완료 (6/12)
-- **카테고리 2 (솔버 지원)**: 50.0% 완료 (4/8) 🎉
+- **카테고리 2 (솔버 지원)**: 62.5% 완료 (5/8) 🎉
 - **범용 Format**: 100.0% 완료 (4/4) 🎉
 
 ---
