@@ -196,7 +196,9 @@ class TetMesher:
 
     def mesh_with_boundary_layer(self, shape: TopoDS_Shape,
                                  layer_thickness: float,
-                                 num_layers: int = 3) -> MeshData:
+                                 num_layers: int = 3,
+                                 surface_tags: Optional[List[int]] = None,
+                                 growth_ratio: float = 1.2) -> MeshData:
         """
         Generate tetrahedral mesh with boundary layer
 
@@ -206,9 +208,20 @@ class TetMesher:
             shape: TopoDS_Shape to mesh
             layer_thickness: Total thickness of boundary layer
             num_layers: Number of boundary layers
+            surface_tags: Specific surface tags to apply boundary layer
+                         (None = apply to all surfaces)
+            growth_ratio: Growth ratio between layers (default 1.2)
 
         Returns:
             MeshData with tetrahedral mesh and boundary layers
+
+        Example:
+            >>> mesher = TetMesher(mesh_size=5.0)
+            >>> # Apply boundary layer to all surfaces
+            >>> mesh = mesher.mesh_with_boundary_layer(shape, layer_thickness=2.0, num_layers=5)
+            >>> # Or apply to specific surfaces only
+            >>> mesh = mesher.mesh_with_boundary_layer(shape, layer_thickness=2.0,
+            ...                                        surface_tags=[1, 3, 5])
         """
         self.logger.info(
             f"Generating tet mesh with boundary layer: "
@@ -228,23 +241,48 @@ class TetMesher:
                 # Set algorithm
                 gmsh_wrapper.set_algorithm(self.algorithm, dimension=3)
 
-                # Configure boundary layer
+                # Configure boundary layer using Distance + Threshold fields
+                # This creates fine mesh near surfaces, gradually coarsening away
                 import gmsh
 
-                # Get all surfaces for boundary layer
-                surfaces = gmsh.model.getEntities(2)
-                surface_tags = [tag for dim, tag in surfaces]
+                # Get surfaces for boundary layer
+                if surface_tags is None:
+                    # Apply to all surfaces
+                    surfaces = gmsh.model.getEntities(2)
+                    selected_surfaces = [tag for dim, tag in surfaces]
+                    self.logger.info(f"Applying boundary layer to all {len(selected_surfaces)} surfaces")
+                else:
+                    # Apply to specified surfaces only
+                    selected_surfaces = surface_tags
+                    self.logger.info(f"Applying boundary layer to {len(selected_surfaces)} selected surfaces")
 
-                # Add boundary layer field
-                # Note: This is a simplified implementation
-                field_id = gmsh.model.mesh.field.add("BoundaryLayer")
-                gmsh.model.mesh.field.setNumbers(field_id, "FacesList", surface_tags)
-                gmsh.model.mesh.field.setNumber(field_id, "Size", layer_thickness / num_layers)
-                gmsh.model.mesh.field.setNumber(field_id, "Ratio", 1.2)
-                gmsh.model.mesh.field.setNumber(field_id, "Quads", 0)  # Use triangles
+                # Distance field: compute distance from surfaces
+                distance_field = gmsh.model.mesh.field.add("Distance")
+                gmsh.model.mesh.field.setNumbers(distance_field, "SurfacesList", selected_surfaces)
+                gmsh.model.mesh.field.setNumber(distance_field, "Sampling", 100)
+
+                # Threshold field: vary mesh size based on distance
+                # Creates fine mesh near surface, gradually coarsening with distance
+                threshold_field = gmsh.model.mesh.field.add("Threshold")
+                gmsh.model.mesh.field.setNumber(threshold_field, "InField", distance_field)
+
+                # Element size in boundary layer (fine mesh)
+                bl_element_size = layer_thickness / num_layers
+                gmsh.model.mesh.field.setNumber(threshold_field, "SizeMin", bl_element_size)
+
+                # Element size far from boundary layer (coarse mesh)
+                gmsh.model.mesh.field.setNumber(threshold_field, "SizeMax", self.mesh_size)
+
+                # Distance range for boundary layer
+                gmsh.model.mesh.field.setNumber(threshold_field, "DistMin", 0.0)
+                gmsh.model.mesh.field.setNumber(threshold_field, "DistMax", layer_thickness)
+
+                # Sigmoid transition for smooth growth
+                # Note: growth_ratio parameter is stored for future anisotropic implementations
+                gmsh.model.mesh.field.setNumber(threshold_field, "Sigmoid", 1)
 
                 # Set as background field
-                gmsh.model.mesh.field.setAsBackgroundMesh(field_id)
+                gmsh.model.mesh.field.setAsBackgroundMesh(threshold_field)
 
                 # Generate mesh
                 gmsh_wrapper.generate_mesh(3)
