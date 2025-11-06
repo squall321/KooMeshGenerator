@@ -107,12 +107,17 @@ docs/_templates/
 !tests/fixtures/**/*.vtu
 !tests/fixtures/**/*.vtk
 
+# Universal File Format output
+*.unv
+!tests/fixtures/**/*.unv
+
 # Example output directories
 abaqus_export_examples/
 ansys_export_examples/
 lsdyna_export_examples/
 nastran_export_examples/
 vtk_export_examples/
+unv_export_examples/
 
 # Temporary files
 *.tmp
