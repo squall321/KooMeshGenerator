@@ -1151,6 +1151,208 @@ with AbaqusWriter('precise.inp', precision=12, reduced_integration=True) as writ
 - **Test Pass Rate**: 100% (30/30)
 
 ---
+### [015] Nastran Export (.bdf format)
+**완료일**: 2025-11-06
+**커밋**: `84f092e`
+**개발 기간**: ~1일
+
+#### 구현 내용
+- **Complete Nastran Bulk Data Format Support**:
+  - BEGIN BULK / ENDDATA structure
+  - GRID entries for nodes (large/small field)
+  - CHEXA, CTETRA, CPENTA, CPYRAM element types
+  - MAT1 (isotropic material properties)
+  - PSOLID (solid property definitions)
+  - SET1 (node and element sets)
+  - Comment lines with $
+  - Continuation lines with *
+
+- **Element Type Mapping**:
+  - HEX8 → CHEXA (8-node hexahedron)
+  - HEX20 → CHEXA (20-node hexahedron)
+  - HEX27 → CHEXA (mapped to 20-node)
+  - TET4 → CTETRA (4-node tetrahedron)
+  - TET10 → CTETRA (10-node tetrahedron)
+  - PRISM6 → CPENTA (6-node wedge)
+  - PYRAMID5 → CPYRAM (5-node pyramid)
+
+- **Advanced Features**:
+  - Large field format (16 chars per field, default)
+  - Small field format (8 chars per field)
+  - Configurable precision (default: 8 decimals)
+  - Scientific notation (E format)
+  - Automatic shear modulus calculation (G = E / (2*(1+ν)))
+  - Continuation lines for quadratic elements
+  - Set tracking (duplicate prevention)
+  - Context manager support
+
+- **파일 생성**:
+  - `koomesh/export/nastran_writer.py`: Core writer class (480+ lines)
+  - `examples/nastran_export_demo.py`: 7 comprehensive demos (580+ lines)
+  - `tests/test_nastran_writer.py`: Full test suite (550+ lines)
+
+#### 기술적 세부사항
+```python
+from koomesh.export.nastran_writer import NastranWriter
+
+# Basic usage (large field format)
+with NastranWriter('model.bdf', format='large') as writer:
+    writer.write_complete_model(
+        mesh,
+        title="My Model",
+        youngs=210000.0,
+        poisson=0.3,
+        density=7.85e-9
+    )
+
+# Small field format (compact)
+with NastranWriter('model.bdf', format='small', precision=6) as writer:
+    writer.write_complete_model(mesh, title="Compact Model")
+
+# Advanced usage with manual control
+with NastranWriter('model.bdf') as writer:
+    # Header
+    writer.write_header("Complex Model", comments=["Version 1.0", "Units: N, mm"])
+    
+    # Nodes and elements
+    writer.write_nodes(mesh)
+    writer.write_elements(mesh, pid=1)
+    
+    # Material and property
+    writer.write_material(mat_id=1, youngs=210000, poisson=0.3, density=7.85e-9)
+    writer.write_property(pid=1, mat_id=1)
+    
+    # Sets
+    writer.write_set(set_id=100, set_type="NODE", entity_ids=boundary_nodes)
+    writer.write_set(set_id=200, set_type="ELEM", entity_ids=part1_elements)
+```
+
+#### Field Format Comparison
+```
+Large Field Format (16 chars per field):
+GRID*                  1  0.00000000E+00  1.00000000E+00
+*         2.00000000E+00               0               0
+
+Small Field Format (8 chars per field):
+GRID       1    0.0 1.0 2.0     0       0
+```
+
+#### Element Format (CHEXA)
+```
+Large Field Format with Continuations:
+CHEXA*                 1               1               1               2
+*                      3               4               5               6
+*                      7               8
+
+Small Field Format:
+CHEXA          1       1       1       2       3       4       5       6
+               7       8
+```
+
+#### Material Properties (MAT1)
+```
+MAT1*                  1  2.10000000E+05  8.07692308E+04  3.00000000E-01
+*         7.85000000E-09
+$ Material 1
+$ E = 210 GPa (Young's modulus)
+$ G = 80.77 GPa (Shear modulus, calculated)
+$ NU = 0.3 (Poisson's ratio)
+$ RHO = 7.85e-9 tonne/mm^3 (Density)
+```
+
+#### 테스트 결과
+- **Test Suite**: 25 tests across 7 test classes
+  - Initialization: 4/4 ✓
+  - Node writing: 3/3 ✓
+  - Element writing: 3/3 ✓
+  - Materials and properties: 4/4 ✓
+  - Sets: 2/2 ✓
+  - Complete model: 3/3 ✓
+  - Format compliance: 4/4 ✓
+  - Error handling: 2/2 ✓
+- **Overall**: 25/25 passing (100%)
+
+#### 데모 예제
+`nastran_export_demo.py` includes 7 demonstrations:
+1. Basic HEX8 mesh (large field format)
+2. HEX8 mesh with small field format
+3. Quadratic HEX20 elements (20 nodes)
+4. TET4 tetrahedron mesh
+5. Complete model with material properties
+6. Multi-part model with sets
+7. Advanced mesh with multiple materials
+
+#### 사용 예시
+```python
+# Example 1: Simple export
+mesh = create_hex8_mesh()
+with NastranWriter('simple.bdf') as writer:
+    writer.write_complete_model(mesh, title="Simple Model")
+
+# Example 2: With material properties
+with NastranWriter('with_material.bdf') as writer:
+    writer.write_complete_model(
+        mesh,
+        title="Steel Part",
+        youngs=210000.0,
+        poisson=0.3,
+        density=7.85e-9
+    )
+
+# Example 3: Small field format (compact)
+with NastranWriter('compact.bdf', format='small', precision=6) as writer:
+    writer.write_complete_model(mesh, title="Compact Model")
+
+# Example 4: Multiple materials
+with NastranWriter('multi_mat.bdf') as writer:
+    writer.write_header("Multi-Material Model")
+    writer.write_nodes(mesh)
+    writer.write_elements(mesh, pid=1)
+    
+    # Aluminum
+    writer.write_material(mat_id=1, youngs=70000, poisson=0.33, density=2.7e-9)
+    writer.write_property(pid=1, mat_id=1)
+    
+    # Steel
+    writer.write_material(mat_id=2, youngs=210000, poisson=0.30, density=7.85e-9)
+    writer.write_property(pid=2, mat_id=2)
+```
+
+#### Nastran Format Compliance
+- **Structure**: BEGIN BULK ... ENDDATA
+- **Field Widths**: 8 chars (small) or 16 chars (large)
+- **Comments**: $ prefix for documentation
+- **Continuations**: * prefix (not +)
+- **Scientific Notation**: E format (e.g., 2.10000000E+05)
+- **Card Types**: GRID, CHEXA, CTETRA, CPENTA, CPYRAM, MAT1, PSOLID, SET1
+- **Coordinate Systems**: Optional CP, CD parameters
+
+#### 활용 사례
+- **FEA Analysis**: Export mesh for MSC Nastran, NX Nastran
+- **Structural Analysis**: Static, modal, dynamic analysis
+- **Aerospace Applications**: Aircraft and spacecraft structures
+- **Automotive**: Chassis and body analysis
+- **Pre-processing**: Use with FEMAP, Patran
+- **Post-processing**: Visualization in Nastran-compatible tools
+
+#### 장점
+- **Industry Standard**: Nastran format universal in aerospace/automotive
+- **Two Field Formats**: Flexible large (16-char) or small (8-char) fields
+- **Complete Support**: All element types, materials, properties, sets
+- **Easy to Use**: Context manager, simple API
+- **Flexible**: Configurable precision, automatic calculations
+- **Validated**: 100% test pass rate
+- **Well Documented**: 7 comprehensive demos
+
+#### 통계
+- **Core Implementation**: 480 lines (nastran_writer.py)
+- **Test Coverage**: 550 lines (25 tests)
+- **Demo Code**: 580 lines (7 demos)
+- **Total**: ~1,610 lines
+- **Test Pass Rate**: 100% (25/25)
+
+---
+
 
 ## 🔧 기술 스택 및 도구
 
@@ -1302,13 +1504,15 @@ with AbaqusWriter('precise.inp', precision=12, reduced_integration=True) as writ
 ## 📊 통계
 
 ### 코드 기여
-- **추가된 라인**: ~12,820 lines
-- **새 파일**: 22개
-- **수정된 파일**: 6개
-- **테스트 케이스**: 130+ 개 (모두 통과)
+- **추가된 라인**: ~15,900 lines
+- **새 파일**: 27개
+- **수정된 파일**: 7개
+- **테스트 케이스**: 155+ 개 (모두 통과)
 
 ### Git History
 ```bash
+84f092e - Implement [015] Nastran Export (.bdf format)
+5ff491a - Implement [014] ANSYS Export (.cdb format)
 33a8041 - Implement [019] ABAQUS Export (.inp format)
 cc15b95 - Implement [012] LS-DYNA Compatibility Checker
 ac2440a - Implement [009] Mesh Quality Report Generation (HTML/PDF)
@@ -1322,11 +1526,11 @@ c304b88 - Add comprehensive future development ideas documentation
 ```
 
 ### 진행률
-- **완료된 항목**: 7/152 (4.6%)
+- **완료된 항목**: 9/152 (5.9%)
 - **개발 기간**: 약 6-8주
-- **라인/주**: ~1,600 lines
+- **라인/주**: ~1,800 lines
 - **카테고리 1 (메시 품질)**: 50.0% 완료 (6/12)
-- **카테고리 2 (솔버 지원)**: 12.5% 완료 (1/8)
+- **카테고리 2 (솔버 지원)**: 37.5% 완료 (3/8)
 
 ---
 
