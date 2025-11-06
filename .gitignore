@@ -132,6 +132,7 @@ vtk_export_examples/
 unv_export_examples/
 exodus_export_examples/
 gmsh_export_examples/
+calculix_export_examples/
 
 # Temporary files
 *.tmp
