@@ -111,6 +111,14 @@ docs/_templates/
 *.unv
 !tests/fixtures/**/*.unv
 
+# Exodus II output
+*.exo
+*.e
+*.ex2
+*.exoII
+!tests/fixtures/**/*.exo
+!tests/fixtures/**/*.e
+
 # Example output directories
 abaqus_export_examples/
 ansys_export_examples/
@@ -118,6 +126,7 @@ lsdyna_export_examples/
 nastran_export_examples/
 vtk_export_examples/
 unv_export_examples/
+exodus_export_examples/
 
 # Temporary files
 *.tmp
