@@ -22,27 +22,41 @@ from pathlib import Path
 from typing import List, Optional, Dict, Any
 import logging
 
-# Try to import PythonOCC modules
+# Try to import OCC modules (through OCP - cadquery-ocp)
 try:
-    from OCC.Core.STEPControl import STEPControl_Reader
-    from OCC.Core.IFSelect import IFSelect_RetDone, IFSelect_ItemsByEntity
-    from OCC.Core.TopoDS import TopoDS_Shape
-    from OCC.Core.TopExp import TopExp_Explorer
-    from OCC.Core.TopAbs import (
+    from OCP.STEPControl import STEPControl_Reader
+    from OCP.IFSelect import IFSelect_RetDone, IFSelect_ItemsByEntity
+    from OCP.TopoDS import TopoDS_Shape
+    from OCP.TopExp import TopExp_Explorer
+    from OCP.TopAbs import (
         TopAbs_SOLID, TopAbs_FACE, TopAbs_EDGE,
         TopAbs_VERTEX, TopAbs_SHELL, TopAbs_COMPOUND
     )
-    from OCC.Core.GProp import GProp_GProps
-    from OCC.Core.BRepGProp import (
-        brepgprop_VolumeProperties,
-        brepgprop_SurfaceProperties
-    )
+    from OCP.GProp import GProp_GProps
+    from OCP.BRepGProp import BRepGProp
     PYTHONOCC_AVAILABLE = True
 except ImportError:
-    PYTHONOCC_AVAILABLE = False
-    # Define dummy classes for type hints when PythonOCC is not available
-    class TopoDS_Shape:
-        pass
+    # Fall back to old PythonOCC if available
+    try:
+        from OCC.Core.STEPControl import STEPControl_Reader
+        from OCC.Core.IFSelect import IFSelect_RetDone, IFSelect_ItemsByEntity
+        from OCC.Core.TopoDS import TopoDS_Shape
+        from OCC.Core.TopExp import TopExp_Explorer
+        from OCC.Core.TopAbs import (
+            TopAbs_SOLID, TopAbs_FACE, TopAbs_EDGE,
+            TopAbs_VERTEX, TopAbs_SHELL, TopAbs_COMPOUND
+        )
+        from OCC.Core.GProp import GProp_GProps
+        from OCC.Core.BRepGProp import (
+            brepgprop_VolumeProperties,
+            brepgprop_SurfaceProperties
+        )
+        PYTHONOCC_AVAILABLE = True
+    except ImportError:
+        PYTHONOCC_AVAILABLE = False
+        # Define dummy classes for type hints when neither is available
+        class TopoDS_Shape:
+            pass
 
 
 class STEPReaderError(Exception):
@@ -208,7 +222,7 @@ class STEPReader:
         # Calculate volume for solids
         try:
             props = GProp_GProps()
-            brepgprop_VolumeProperties(shape, props)
+            BRepGProp.VolumeProperties_s(shape, props)
             info['volume'] = props.Mass()
         except Exception as e:
             self.logger.debug(f"Could not calculate volume: {e}")
@@ -217,7 +231,7 @@ class STEPReader:
         # Calculate surface area
         try:
             props = GProp_GProps()
-            brepgprop_SurfaceProperties(shape, props)
+            BRepGProp.SurfaceProperties_s(shape, props)
             info['surface_area'] = props.Mass()
         except Exception as e:
             self.logger.debug(f"Could not calculate surface area: {e}")
