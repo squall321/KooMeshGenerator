@@ -21,13 +21,23 @@ from typing import Optional, List, Dict
 import numpy as np
 
 try:
-    from OCC.Core.TopoDS import TopoDS_Shape
-    from OCC.Core.BRepBndLib import brepbndlib
-    from OCC.Core.Bnd import Bnd_Box
+    from OCP.TopoDS import TopoDS_Shape
+    from OCP.BRepBndLib import BRepBndLib
+    from OCP.Bnd import Bnd_Box
     PYTHONOCC_AVAILABLE = True
+    USE_OCP = True
 except ImportError:
-    PYTHONOCC_AVAILABLE = False
-    TopoDS_Shape = object
+    try:
+        from OCC.Core.TopoDS import TopoDS_Shape
+        from OCC.Core.BRepBndLib import brepbndlib as BRepBndLib
+        from OCC.Core.Bnd import Bnd_Box
+        PYTHONOCC_AVAILABLE = True
+        USE_OCP = False
+    except ImportError:
+        PYTHONOCC_AVAILABLE = False
+        USE_OCP = False
+        TopoDS_Shape = object
+        BRepBndLib = object
 
 from koomesh.meshing.mesh_data import MeshData, ElementType
 from koomesh.meshing.gmsh_utils import GmshWrapper, GmshError
@@ -103,7 +113,10 @@ class TetMesher:
 
         # Get bounding box for info
         bbox = Bnd_Box()
-        brepbndlib.Add(shape, bbox)
+        if USE_OCP:
+            BRepBndLib.Add_s(shape, bbox)
+        else:
+            BRepBndLib.Add(shape, bbox)
         xmin, ymin, zmin, xmax, ymax, zmax = bbox.Get()
         dimensions = (xmax - xmin, ymax - ymin, zmax - zmin)
 

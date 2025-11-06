@@ -33,14 +33,23 @@ try:
 except ImportError:
     GMSH_AVAILABLE = False
 
-# Try to import PythonOCC
+# Try to import OCC modules (OCP first, then fall back to PythonOCC)
 try:
-    from OCC.Core.TopoDS import TopoDS_Shape
-    from OCC.Extend.DataExchange import write_step_file
+    from OCP.TopoDS import TopoDS_Shape
+    from OCP.STEPControl import STEPControl_Writer, STEPControl_AsIs
+    from OCP.IFSelect import IFSelect_RetDone
     PYTHONOCC_AVAILABLE = True
+    USE_OCP = True
 except ImportError:
-    PYTHONOCC_AVAILABLE = False
-    TopoDS_Shape = object
+    try:
+        from OCC.Core.TopoDS import TopoDS_Shape
+        from OCC.Extend.DataExchange import write_step_file
+        PYTHONOCC_AVAILABLE = True
+        USE_OCP = False
+    except ImportError:
+        PYTHONOCC_AVAILABLE = False
+        USE_OCP = False
+        TopoDS_Shape = object
 
 
 from koomesh.meshing.mesh_data import MeshData, ElementType
@@ -157,7 +166,16 @@ class GmshWrapper:
 
         try:
             # Write shape to STEP file
-            write_step_file(shape, temp_path)
+            if USE_OCP:
+                # Use OCP STEPControl_Writer
+                writer = STEPControl_Writer()
+                writer.Transfer(shape, STEPControl_AsIs)
+                status = writer.Write(temp_path)
+                if status != IFSelect_RetDone:
+                    raise GmshError(f"Failed to write STEP file: status={status}")
+            else:
+                # Use PythonOCC write_step_file
+                write_step_file(shape, temp_path)
 
             # Import into GMSH
             gmsh.model.occ.importShapes(temp_path)
