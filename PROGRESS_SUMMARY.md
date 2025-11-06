@@ -1353,6 +1353,251 @@ with NastranWriter('multi_mat.bdf') as writer:
 
 ---
 
+### [017] VTK Export (.vtu and .vtk formats)
+**완료일**: 2025-11-06
+**커밋**: `0269656`
+**개발 기간**: ~1일
+
+#### 구현 내용
+- **Complete VTK Format Support**:
+  - .vtu (VTK XML Unstructured Grid) - Modern format
+  - .vtk (Legacy VTK format) - Classic ASCII format
+  - ASCII encoding (human-readable)
+  - Binary encoding (Base64, more compact)
+  - Scalar data fields (temperature, pressure, density, etc.)
+  - Vector data fields (displacement, velocity, stress, etc.)
+  - Multi-field export in single file
+
+- **Element Type Mapping**:
+  - HEX8 → VTK_HEXAHEDRON (12)
+  - HEX20 → VTK_QUADRATIC_HEXAHEDRON (25)
+  - HEX27 → VTK_TRIQUADRATIC_HEXAHEDRON (29)
+  - TET4 → VTK_TETRA (10)
+  - TET10 → VTK_QUADRATIC_TETRA (24)
+  - PRISM6 → VTK_WEDGE (13)
+  - PYRAMID5 → VTK_PYRAMID (14)
+
+- **Advanced Features**:
+  - Context manager support
+  - Pretty-printed XML output
+  - 0-based indexing (automatic conversion)
+  - Base64 encoding for binary data
+  - Multiple scalar/vector fields per file
+  - Convenience write_simple() method
+
+- **파일 생성**:
+  - `koomesh/export/vtk_writer.py`: Core writer class (470+ lines)
+  - `examples/vtk_export_demo.py`: 7 comprehensive demos (640+ lines)
+  - `tests/test_vtk_writer.py`: Full test suite (550+ lines)
+
+#### 기술적 세부사항
+```python
+from koomesh.export.vtk_writer import VTKWriter
+
+# XML format (modern)
+with VTKWriter('model.vtu', format='xml', encoding='ascii') as writer:
+    writer.write_mesh(mesh)
+
+# Legacy format (compatibility)
+with VTKWriter('model.vtk', format='legacy') as writer:
+    writer.write_mesh(mesh)
+
+# With scalar data
+scalar_data = {'Temperature': temperature_values}
+with VTKWriter('model.vtu') as writer:
+    writer.write_mesh(mesh, scalar_data=scalar_data)
+
+# With vector data
+vector_data = {'Displacement': displacement_vectors}
+with VTKWriter('model.vtu') as writer:
+    writer.write_mesh(mesh, vector_data=vector_data)
+
+# Binary encoding (6-7% size reduction)
+with VTKWriter('model.vtu', encoding='binary') as writer:
+    writer.write_mesh(mesh)
+
+# Multi-field export
+scalar_data = {
+    'Temperature': temp_values,
+    'Pressure': pressure_values,
+    'Density': density_values
+}
+vector_data = {
+    'Velocity': velocity_vectors,
+    'Stress': stress_vectors
+}
+with VTKWriter('model.vtu') as writer:
+    writer.write_mesh(mesh, scalar_data=scalar_data, vector_data=vector_data)
+
+# Convenience method
+VTKWriter.write_simple(mesh, 'model.vtu')
+```
+
+#### XML Format Structure (.vtu)
+```xml
+<VTKFile type="UnstructuredGrid" version="1.0">
+  <UnstructuredGrid>
+    <Piece NumberOfPoints="27" NumberOfCells="8">
+      <Points>
+        <DataArray type="Float64" NumberOfComponents="3" format="ascii">
+          <!-- Node coordinates -->
+        </DataArray>
+      </Points>
+      <Cells>
+        <DataArray type="Int32" Name="connectivity">
+          <!-- Element connectivity (0-based) -->
+        </DataArray>
+        <DataArray type="Int32" Name="offsets">
+          <!-- Cumulative node counts -->
+        </DataArray>
+        <DataArray type="UInt8" Name="types">
+          <!-- VTK cell types -->
+        </DataArray>
+      </Cells>
+      <PointData>
+        <DataArray type="Float64" Name="Temperature">
+          <!-- Scalar field -->
+        </DataArray>
+        <DataArray type="Float64" Name="Displacement" NumberOfComponents="3">
+          <!-- Vector field -->
+        </DataArray>
+      </PointData>
+    </Piece>
+  </UnstructuredGrid>
+</VTKFile>
+```
+
+#### Legacy Format Structure (.vtk)
+```
+# vtk DataFile Version 3.0
+KooMeshGenerator VTK Export
+ASCII
+DATASET UNSTRUCTURED_GRID
+
+POINTS 27 double
+0.0 0.0 0.0
+1.0 0.0 0.0
+...
+
+CELLS 8 72
+8 0 1 2 3 4 5 6 7
+8 1 8 9 2 5 10 11 6
+...
+
+CELL_TYPES 8
+12
+12
+...
+
+POINT_DATA 27
+SCALARS Temperature double 1
+LOOKUP_TABLE default
+20.0
+30.0
+...
+
+VECTORS Displacement double
+0.0 0.0 0.0
+0.1 0.2 0.3
+...
+```
+
+#### 테스트 결과
+- **Test Suite**: 23 tests across 6 test classes
+  - Initialization: 6/6 ✓
+  - XML format: 7/7 ✓
+  - Legacy format: 4/4 ✓
+  - Element types: 2/2 ✓
+  - Convenience methods: 2/2 ✓
+  - Error handling: 2/2 ✓
+- **Overall**: 23/23 passing (100%)
+
+#### 데모 예제
+`vtk_export_demo.py` includes 7 demonstrations:
+1. Basic HEX8 mesh (XML format, 8 elements)
+2. TET4 mesh (Legacy format, 4 elements)
+3. Mesh with scalar data (temperature field)
+4. Mesh with vector data (displacement field)
+5. Binary encoding comparison (6.8% size reduction)
+6. Multi-field data export (5 fields: 3 scalars + 2 vectors)
+7. All element types showcase (HEX8, TET4, PRISM6, PYRAMID5)
+
+#### 사용 예시
+```python
+# Example 1: Simple export
+mesh = create_hex8_mesh()
+VTKWriter.write_simple(mesh, 'simple.vtu')
+
+# Example 2: With temperature field
+temperature = [20.0 + z * 50.0 for z in z_coords]
+with VTKWriter('temp_field.vtu') as writer:
+    writer.write_mesh(mesh, scalar_data={'Temperature': temperature})
+
+# Example 3: With displacement vectors
+displacement = [[x*0.1, y*0.2, z*0.3] for x,y,z in coords]
+with VTKWriter('displaced.vtu') as writer:
+    writer.write_mesh(mesh, vector_data={'Displacement': displacement})
+
+# Example 4: Legacy format for compatibility
+with VTKWriter('legacy.vtk', format='legacy') as writer:
+    writer.write_mesh(mesh)
+```
+
+#### VTK Format Compliance
+- **XML Format**: VTK XML UnstructuredGrid specification
+- **Legacy Format**: Classic VTK file format
+- **Indexing**: 0-based (converted from 1-based internally)
+- **Encoding**: ASCII (human-readable) or Binary (Base64)
+- **Data Types**: Float64 for coordinates, Int32 for connectivity, UInt8 for types
+- **Pretty Printing**: XML output with proper indentation
+
+#### 활용 사례
+- **Scientific Visualization**: ParaView, VisIt for result visualization
+- **Post-Processing**: Field analysis, contour plots, streamlines
+- **CFD/FEA Results**: Temperature, pressure, velocity, stress fields
+- **Animation**: Time-series data for transient analysis
+- **Quality Inspection**: Mesh visualization before analysis
+- **Publication**: High-quality figures for papers/reports
+
+#### 장점
+- **Universal Format**: VTK supported by most visualization tools
+- **Open Standard**: Free, well-documented format
+- **Rich Features**: Scalars, vectors, tensors, multiple fields
+- **Two Formats**: Modern XML or legacy ASCII
+- **Easy to Use**: Simple Python API, context manager
+- **Flexible**: Binary/ASCII encoding choice
+- **Validated**: 100% test pass rate
+- **Well Documented**: 7 comprehensive demos
+
+#### 호환성
+- **ParaView**: Free, powerful scientific visualization
+- **VisIt**: DOE-developed visualization tool
+- **Mayavi**: Python 3D scientific visualization
+- **VTK Applications**: Any tool using VTK library
+- **Python**: meshio, pyvista for VTK I/O
+
+#### ParaView 사용 팁
+1. **Load File**: File → Open → Select .vtu/.vtk
+2. **Apply**: Click "Apply" button to load
+3. **Color By**: Choose scalar/vector field from dropdown
+4. **Filters**:
+   - Warp By Vector: Visualize displacements
+   - Glyph: Show vector directions
+   - Streamlines: Flow visualization
+   - Contour: Iso-surfaces
+   - Clip/Slice: Cross-sections
+5. **Save State**: File → Save State for reproducibility
+
+#### 통계
+- **Core Implementation**: 470 lines (vtk_writer.py)
+- **Test Coverage**: 550 lines (23 tests)
+- **Demo Code**: 640 lines (7 demos)
+- **Total**: ~1,660 lines
+- **Test Pass Rate**: 100% (23/23)
+- **Binary Size Reduction**: ~6.8%
+
+---
+
 
 ## 🔧 기술 스택 및 도구
 
@@ -1504,13 +1749,14 @@ with NastranWriter('multi_mat.bdf') as writer:
 ## 📊 통계
 
 ### 코드 기여
-- **추가된 라인**: ~15,900 lines
-- **새 파일**: 27개
-- **수정된 파일**: 7개
-- **테스트 케이스**: 155+ 개 (모두 통과)
+- **추가된 라인**: ~17,560 lines
+- **새 파일**: 30개
+- **수정된 파일**: 8개
+- **테스트 케이스**: 178+ 개 (모두 통과)
 
 ### Git History
 ```bash
+0269656 - Implement [017] VTK Export (.vtu and .vtk formats)
 84f092e - Implement [015] Nastran Export (.bdf format)
 5ff491a - Implement [014] ANSYS Export (.cdb format)
 33a8041 - Implement [019] ABAQUS Export (.inp format)
@@ -1526,11 +1772,12 @@ c304b88 - Add comprehensive future development ideas documentation
 ```
 
 ### 진행률
-- **완료된 항목**: 9/152 (5.9%)
+- **완료된 항목**: 10/152 (6.6%)
 - **개발 기간**: 약 6-8주
-- **라인/주**: ~1,800 lines
+- **라인/주**: ~2,000 lines
 - **카테고리 1 (메시 품질)**: 50.0% 완료 (6/12)
 - **카테고리 2 (솔버 지원)**: 37.5% 완료 (3/8)
+- **범용 Format**: 25.0% 완료 (1/4)
 
 ---
 
