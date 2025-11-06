@@ -513,6 +513,194 @@ print(detailed)
 - **Total**: ~1,690 lines
 - **Test Pass Rate**: 96% (25/26)
 
+### [009] Mesh Quality Report Generation (HTML/PDF 리포트)
+**완료일**: 2025-11-06
+**커밋**: `ac2440a`
+**개발 기간**: ~1일
+
+#### 구현 내용
+- **Report Formats**:
+  - HTML: Professional multi-section reports with CSS styling
+  - PDF: Print-ready documentation (requires weasyprint)
+  - Plain Text: Command-line summaries
+
+- **Visualizations**:
+  - Quality distribution pie chart
+  - Jacobian histogram
+  - Aspect ratio histogram
+  - Skewness histogram
+  - Multi-metric box plots
+
+- **Report Sections**:
+  - Executive summary with pass/fail status
+  - Quality distribution breakdown
+  - Detailed quality metrics
+  - Problem elements listing
+  - Visual charts and graphs
+
+- **파일 생성**:
+  - `koomesh/utils/mesh_reporter.py`: Main reporter class (430+ lines)
+  - `koomesh/utils/templates/quality_report.html`: HTML template (430+ lines)
+  - `examples/mesh_reporter_demo.py`: Demo with 7 examples (380+ lines)
+  - `tests/test_mesh_reporter.py`: Test suite (420+ lines)
+
+#### 기술적 세부사항
+```python
+from koomesh.utils.mesh_reporter import MeshReporter
+
+reporter = MeshReporter()
+
+# Generate HTML report with charts
+reporter.generate_html_report(
+    mesh, "quality_report.html",
+    include_charts=True
+)
+
+# Generate PDF report
+reporter.generate_pdf_report(
+    mesh, "quality_report.pdf",
+    include_charts=True
+)
+
+# Get plain text summary
+summary = reporter.generate_summary_text(mesh)
+print(summary)
+
+# Custom quality criteria
+from koomesh.meshing.quality_checker import QualityChecker
+custom_checker = QualityChecker(
+    jacobian_threshold=0.5,
+    aspect_ratio_threshold=5.0
+)
+reporter = MeshReporter(quality_checker=custom_checker)
+```
+
+#### HTML Report Features
+- **Professional Design**:
+  - Responsive CSS styling
+  - Color-coded quality badges
+  - Clean typography and layout
+  - Print-friendly formatting
+
+- **Interactive Elements**:
+  - Quality distribution bar
+  - Metric cards with statistics
+  - Sortable element tables
+  - Chart visualizations
+
+- **Content Sections**:
+  - Mesh metadata (type, element/node count)
+  - Executive summary
+  - Quality distribution (with visual bar)
+  - Detailed metrics (6 categories)
+  - Problem elements table (top 20)
+
+#### Chart Types
+1. **Quality Distribution Pie Chart**: Visual breakdown by grade
+2. **Jacobian Histogram**: Distribution of Jacobian values
+3. **Aspect Ratio Histogram**: Element aspect ratio distribution
+4. **Skewness Histogram**: Skewness metric distribution
+5. **Box Plots**: Multi-metric overview (Jacobian, aspect, skewness)
+
+#### Dependencies
+- **Required**:
+  - `jinja2`: HTML template rendering
+  - `matplotlib`: Chart generation
+  - `numpy`: Data processing
+
+- **Optional**:
+  - `weasyprint`: PDF generation (can be installed separately)
+
+#### 테스트 결과
+- **Test Suite**: 18 tests
+  - Reporter initialization: 2/2 ✓
+  - HTML generation: 4/4 ✓
+  - PDF generation: 1/1 ✓ (1 skipped without weasyprint)
+  - Chart generation: 3/3 ✓
+  - Text summary: 3/3 ✓
+  - Report content: 2/2 ✓
+  - Error handling: 2/2 ✓
+- **Overall**: 17/17 passing (100%, 1 skipped)
+
+#### 데모 예제
+`mesh_reporter_demo.py` includes 7 demonstrations:
+1. HTML report generation
+2. PDF report generation
+3. Plain text summary
+4. Custom quality checker configuration
+5. Quality comparison between meshes
+6. Standalone chart generation
+7. Batch processing
+
+#### 사용 예시
+```python
+# Basic usage
+reporter = MeshReporter()
+reporter.generate_html_report(mesh, "report.html")
+
+# With custom criteria
+checker = QualityChecker(
+    jacobian_threshold=0.5,
+    aspect_ratio_threshold=5.0,
+    skewness_threshold=0.5
+)
+reporter = MeshReporter(quality_checker=checker)
+reporter.generate_html_report(mesh, "strict_report.html")
+
+# Batch processing
+for name, mesh in meshes.items():
+    reporter.generate_html_report(
+        mesh, f"{name}_report.html",
+        include_charts=True
+    )
+```
+
+#### 출력 예시
+**HTML Report**: Professional multi-section report with:
+- Colored quality badges
+- Interactive quality distribution bar
+- Statistical metric cards
+- Embedded quality charts
+- Problem elements table
+
+**PDF Report**: Print-ready documentation identical to HTML
+
+**Text Summary**:
+```
+======================================================================
+MESH QUALITY SUMMARY
+======================================================================
+
+Element Type:    hex8
+Total Elements:  27
+Total Nodes:     216
+Bad Elements:    0
+Status:          PASS
+
+Quality Distribution:
+----------------------------------------------------------------------
+Excellent :    27 (100.0%) ████████████████████████████████████
+Good      :     0 (  0.0%)
+Fair      :     0 (  0.0%)
+Poor      :     0 (  0.0%)
+Bad       :     0 (  0.0%)
+
+Key Metrics:
+----------------------------------------------------------------------
+Jacobian:        Min=0.125000, Max=0.125000, Mean=0.125000
+Aspect Ratio:    Min=1.000, Max=1.000, Mean=1.000
+Skewness:        Min=0.000, Max=0.000, Mean=0.000
+======================================================================
+```
+
+#### 통계
+- **Code Added**: ~430 lines (MeshReporter class)
+- **Test Coverage**: 420 lines (18 tests)
+- **Demo Code**: 380 lines (7 demos)
+- **Template**: 430 lines (HTML)
+- **Total**: ~1,660 lines
+- **Test Pass Rate**: 100% (17/17, 1 skipped)
+
 ---
 
 ## 🔧 기술 스택 및 도구
@@ -562,6 +750,13 @@ print(detailed)
 - **Export Formats**: CSV, JSON with structured data
 - **테스트 통과율**: 25/26 (96%)
 - **Features**: Histograms, distributions, comprehensive reporting
+
+### [009] Mesh Quality Report Generation
+- **Output Formats**: HTML, PDF (optional), plain text
+- **Visualizations**: 5 chart types (pie chart, histograms, box plots)
+- **Report Sections**: Executive summary, quality distribution, metrics, problem elements
+- **테스트 통과율**: 17/17 (100%, 1 skipped)
+- **Features**: Professional styling, customizable criteria, batch processing
 
 ---
 
