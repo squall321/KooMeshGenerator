@@ -417,6 +417,28 @@ class MeshData:
 
         return connectivity
 
+    def get_element_coordinates(self, element_id: int) -> np.ndarray:
+        """
+        Get coordinates of all nodes in an element
+
+        Args:
+            element_id: Element ID
+
+        Returns:
+            Array of shape (num_nodes, 3) with node coordinates
+
+        Raises:
+            KeyError: If element ID not found
+        """
+        elem = self.get_element(element_id)
+
+        coords = np.zeros((len(elem.nodes), 3))
+        for i, node_id in enumerate(elem.nodes):
+            node = self.get_node(node_id)
+            coords[i] = node.coordinates()
+
+        return coords
+
     def create_node_set(self, name: str, node_ids: List[int]):
         """
         Create a named set of nodes

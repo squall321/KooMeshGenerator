@@ -45,6 +45,14 @@ except ImportError:
 
 from koomesh.meshing.mesh_data import MeshData, ElementType
 
+# Import AMR module
+try:
+    from koomesh.meshing.adaptive_refiner import AdaptiveMeshRefiner
+    AMR_AVAILABLE = True
+except ImportError:
+    AMR_AVAILABLE = False
+    AdaptiveMeshRefiner = object
+
 
 class GmshError(Exception):
     """Exception raised for GMSH errors"""
@@ -279,6 +287,25 @@ class GmshWrapper:
             gmsh.model.mesh.setRecombine(2, tag)
 
         self.logger.debug(f"Set transfinite meshing for volume {volume_tag}")
+
+    def set_adaptive_refinement(self, refiner: 'AdaptiveMeshRefiner'):
+        """
+        Apply adaptive mesh refinement
+
+        Args:
+            refiner: AdaptiveMeshRefiner object with configured zones
+
+        Example:
+            >>> from koomesh.meshing.adaptive_refiner import AdaptiveMeshRefiner, BoxZone
+            >>> refiner = AdaptiveMeshRefiner(base_mesh_size=1.0)
+            >>> refiner.add_refinement_zone(BoxZone((5, 5, 5), (2, 2, 2), 0.1))
+            >>> wrapper.set_adaptive_refinement(refiner)
+        """
+        if not AMR_AVAILABLE:
+            raise GmshError("Adaptive refinement module not available")
+
+        refiner.apply_to_gmsh()
+        self.logger.info("Applied adaptive mesh refinement")
 
     def generate_mesh(self, dimension: int = 3):
         """
