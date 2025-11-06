@@ -83,6 +83,14 @@ docs/_templates/
 *.binout*
 !tests/fixtures/**/*.k
 
+# ABAQUS output
+*.inp
+!tests/fixtures/**/*.inp
+
+# Example output directories
+abaqus_export_examples/
+lsdyna_export_examples/
+
 # Temporary files
 *.tmp
 *.bak
