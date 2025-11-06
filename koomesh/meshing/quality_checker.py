@@ -40,6 +40,9 @@ class QualityReport:
         skewness: Skewness statistics
         warpage: Warpage statistics (hex only)
         element_size: Element size statistics
+        angles: Angle statistics (min/max angles) [Added in [007]]
+        edge_length_ratio: Edge length ratio statistics [Added in [007]]
+        quality_distribution: Distribution of quality grades [Added in [007]]
         bad_elements: List of bad element IDs
     """
     num_elements: int = 0
@@ -49,6 +52,9 @@ class QualityReport:
     skewness: Dict = field(default_factory=dict)
     warpage: Dict = field(default_factory=dict)
     element_size: Dict = field(default_factory=dict)
+    angles: Dict = field(default_factory=dict)  # Added for [007]
+    edge_length_ratio: Dict = field(default_factory=dict)  # Added for [007]
+    quality_distribution: Dict = field(default_factory=dict)  # Added for [007]
     bad_elements: List[int] = field(default_factory=list)
 
     def is_valid(self) -> bool:
@@ -103,6 +109,41 @@ class QualityReport:
             f"  Min: {self.element_size.get('min', 0):.6f}",
             f"  Max: {self.element_size.get('max', 0):.6f}",
             f"  Mean: {self.element_size.get('mean', 0):.6f}",
+        ])
+
+        # Add angle information if available (added in [007])
+        if self.angles:
+            lines.extend([
+                f"",
+                f"Angles:",
+                f"  Min: {self.angles.get('min', 0):.2f}°",
+                f"  Max: {self.angles.get('max', 0):.2f}°",
+                f"  Mean: {self.angles.get('mean', 0):.2f}°",
+            ])
+
+        # Add edge length ratio if available (added in [007])
+        if self.edge_length_ratio:
+            lines.extend([
+                f"",
+                f"Edge Length Ratio:",
+                f"  Min: {self.edge_length_ratio.get('min', 0):.3f}",
+                f"  Max: {self.edge_length_ratio.get('max', 0):.3f}",
+                f"  Mean: {self.edge_length_ratio.get('mean', 0):.3f}",
+            ])
+
+        # Add quality distribution if available (added in [007])
+        if self.quality_distribution:
+            lines.extend([
+                f"",
+                f"Quality Distribution:",
+                f"  Excellent: {self.quality_distribution.get('Excellent', 0)}",
+                f"  Good: {self.quality_distribution.get('Good', 0)}",
+                f"  Fair: {self.quality_distribution.get('Fair', 0)}",
+                f"  Poor: {self.quality_distribution.get('Poor', 0)}",
+                f"  Bad: {self.quality_distribution.get('Bad', 0)}",
+            ])
+
+        lines.extend([
             f"",
             f"Status: {'PASS' if self.is_valid() else 'FAIL'}",
             f"=" * 60,
@@ -175,9 +216,18 @@ class QualityChecker:
         # Check element size
         report.element_size = self._check_element_size(mesh)
 
+        # Check angles (added in [007])
+        report.angles = self._check_angles(mesh)
+
+        # Check edge length ratio (added in [007])
+        report.edge_length_ratio = self._check_edge_length_ratio(mesh)
+
         # Identify bad elements
         report.bad_elements = self._identify_bad_elements(mesh, report)
         report.num_bad_elements = len(report.bad_elements)
+
+        # Get quality distribution (added in [007])
+        report.quality_distribution = self.get_quality_distribution(mesh)
 
         self.logger.info(f"Quality check complete: {report.num_bad_elements} bad elements found")
 
@@ -705,3 +755,571 @@ class QualityChecker:
             min_jac = min(min_jac, det_J)
 
         return min_jac
+
+    # ========================================================================
+    # Extended Quality Metrics (Added for [007])
+    # ========================================================================
+
+    def _check_angles(self, mesh: MeshData) -> Dict:
+        """
+        Check element angles
+
+        Returns:
+            Dictionary with angle statistics (in degrees)
+        """
+        all_angles = []
+
+        for elem in mesh.elements.values():
+            coords = np.array([
+                mesh.get_node(nid).coordinates() for nid in elem.nodes
+            ])
+
+            min_ang, max_ang = self._compute_angles(elem.type, coords)
+            all_angles.append(min_ang)
+            all_angles.append(max_ang)
+
+        all_angles = np.array(all_angles)
+
+        return {
+            'min': float(np.min(all_angles)),
+            'max': float(np.max(all_angles)),
+            'mean': float(np.mean(all_angles)),
+            'median': float(np.median(all_angles)),
+        }
+
+    def _compute_angles(self, elem_type: ElementType, coords: np.ndarray) -> tuple:
+        """
+        Compute minimum and maximum angles in element
+
+        Returns:
+            Tuple of (min_angle, max_angle) in degrees
+        """
+        angles = []
+        num_nodes = len(coords)
+
+        if num_nodes == 8:  # HEX8
+            # Define faces and compute angles at corners
+            # Each corner has 3 edges meeting
+            corner_edges = [
+                [(0, 1), (0, 3), (0, 4)],  # Node 0
+                [(1, 0), (1, 2), (1, 5)],  # Node 1
+                [(2, 1), (2, 3), (2, 6)],  # Node 2
+                [(3, 0), (3, 2), (3, 7)],  # Node 3
+                [(4, 0), (4, 5), (4, 7)],  # Node 4
+                [(5, 1), (5, 4), (5, 6)],  # Node 5
+                [(6, 2), (6, 5), (6, 7)],  # Node 6
+                [(7, 3), (7, 4), (7, 6)],  # Node 7
+            ]
+
+            for node_idx, edge_list in enumerate(corner_edges):
+                # Compute all pairwise angles between edges at this node
+                for i in range(len(edge_list)):
+                    for j in range(i + 1, len(edge_list)):
+                        from_node1, to_node1 = edge_list[i]
+                        from_node2, to_node2 = edge_list[j]
+
+                        v1 = coords[to_node1] - coords[from_node1]
+                        v2 = coords[to_node2] - coords[from_node2]
+
+                        v1_norm = np.linalg.norm(v1)
+                        v2_norm = np.linalg.norm(v2)
+
+                        if v1_norm > 1e-10 and v2_norm > 1e-10:
+                            cos_angle = np.dot(v1, v2) / (v1_norm * v2_norm)
+                            cos_angle = np.clip(cos_angle, -1.0, 1.0)
+                            angle = np.arccos(cos_angle) * 180 / np.pi
+                            angles.append(angle)
+
+        elif num_nodes == 6:  # PRISM6
+            # Triangular faces have 60° angles, quad faces have 90° angles
+            # Check angles at each vertex
+            faces = [
+                [0, 1, 2],  # Bottom triangle
+                [3, 4, 5],  # Top triangle
+                [0, 1, 4, 3],  # Quad face
+                [1, 2, 5, 4],  # Quad face
+                [2, 0, 3, 5],  # Quad face
+            ]
+
+            for face in faces:
+                n = len(face)
+                for i in range(n):
+                    v1 = coords[face[(i-1) % n]] - coords[face[i]]
+                    v2 = coords[face[(i+1) % n]] - coords[face[i]]
+
+                    v1_norm = np.linalg.norm(v1)
+                    v2_norm = np.linalg.norm(v2)
+
+                    if v1_norm > 1e-10 and v2_norm > 1e-10:
+                        cos_angle = np.dot(v1, v2) / (v1_norm * v2_norm)
+                        cos_angle = np.clip(cos_angle, -1.0, 1.0)
+                        angle = np.arccos(cos_angle) * 180 / np.pi
+                        angles.append(angle)
+
+        elif num_nodes == 5:  # PYRAMID5
+            # Check base angles
+            for i in range(4):
+                v1 = coords[(i-1) % 4] - coords[i]
+                v2 = coords[(i+1) % 4] - coords[i]
+
+                v1_norm = np.linalg.norm(v1)
+                v2_norm = np.linalg.norm(v2)
+
+                if v1_norm > 1e-10 and v2_norm > 1e-10:
+                    cos_angle = np.dot(v1, v2) / (v1_norm * v2_norm)
+                    cos_angle = np.clip(cos_angle, -1.0, 1.0)
+                    angle = np.arccos(cos_angle) * 180 / np.pi
+                    angles.append(angle)
+
+            # Check apex angles
+            for i in range(4):
+                v1 = coords[i] - coords[4]
+                v2 = coords[(i+1) % 4] - coords[4]
+
+                v1_norm = np.linalg.norm(v1)
+                v2_norm = np.linalg.norm(v2)
+
+                if v1_norm > 1e-10 and v2_norm > 1e-10:
+                    cos_angle = np.dot(v1, v2) / (v1_norm * v2_norm)
+                    cos_angle = np.clip(cos_angle, -1.0, 1.0)
+                    angle = np.arccos(cos_angle) * 180 / np.pi
+                    angles.append(angle)
+
+        elif elem_type.is_tet():
+            # Tetrahedral elements - check all edges
+            edges = [
+                (0, 1), (0, 2), (0, 3),
+                (1, 2), (1, 3), (2, 3)
+            ]
+
+            for i, (e1_start, e1_end) in enumerate(edges):
+                v1 = coords[e1_end] - coords[e1_start]
+                v1_norm = np.linalg.norm(v1)
+
+                if v1_norm > 1e-10:
+                    for j, (e2_start, e2_end) in enumerate(edges):
+                        if i < j and (e1_start == e2_start or e1_start == e2_end or
+                                     e1_end == e2_start or e1_end == e2_end):
+                            v2 = coords[e2_end] - coords[e2_start]
+                            v2_norm = np.linalg.norm(v2)
+
+                            if v2_norm > 1e-10:
+                                cos_angle = np.dot(v1, v2) / (v1_norm * v2_norm)
+                                cos_angle = np.clip(cos_angle, -1.0, 1.0)
+                                angle = np.arccos(abs(cos_angle)) * 180 / np.pi
+                                angles.append(angle)
+
+        if len(angles) == 0:
+            return (90.0, 90.0)
+
+        return (float(np.min(angles)), float(np.max(angles)))
+
+    def _check_edge_length_ratio(self, mesh: MeshData) -> Dict:
+        """
+        Check edge length ratios
+
+        Returns:
+            Dictionary with edge length ratio statistics
+        """
+        ratios = []
+
+        for elem in mesh.elements.values():
+            coords = np.array([
+                mesh.get_node(nid).coordinates() for nid in elem.nodes
+            ])
+
+            ratio = self._compute_edge_length_ratio(coords)
+            ratios.append(ratio)
+
+        ratios = np.array(ratios)
+
+        return {
+            'min': float(np.min(ratios)),
+            'max': float(np.max(ratios)),
+            'mean': float(np.mean(ratios)),
+            'median': float(np.median(ratios)),
+            'bad_elements': int(np.sum(ratios > 10))  # Ratio > 10 is bad
+        }
+
+    def _compute_edge_length_ratio(self, coords: np.ndarray) -> float:
+        """
+        Compute edge length ratio (max/min) for element edges only
+
+        Returns:
+            Edge length ratio
+        """
+        edge_lengths = []
+        num_nodes = len(coords)
+
+        # Define element edges based on element type
+        if num_nodes == 8:  # HEX8
+            # 12 edges of hex element
+            edges = [
+                (0, 1), (1, 2), (2, 3), (3, 0),  # Bottom face
+                (4, 5), (5, 6), (6, 7), (7, 4),  # Top face
+                (0, 4), (1, 5), (2, 6), (3, 7),  # Vertical edges
+            ]
+        elif num_nodes == 4:  # TET4
+            # 6 edges of tet
+            edges = [
+                (0, 1), (0, 2), (0, 3),
+                (1, 2), (1, 3), (2, 3)
+            ]
+        elif num_nodes == 6:  # PRISM6
+            # 9 edges of prism
+            edges = [
+                (0, 1), (1, 2), (2, 0),  # Bottom triangle
+                (3, 4), (4, 5), (5, 3),  # Top triangle
+                (0, 3), (1, 4), (2, 5),  # Vertical edges
+            ]
+        elif num_nodes == 5:  # PYRAMID5
+            # 8 edges of pyramid
+            edges = [
+                (0, 1), (1, 2), (2, 3), (3, 0),  # Base
+                (0, 4), (1, 4), (2, 4), (3, 4),  # Apex edges
+            ]
+        else:
+            # Default: compute all pairwise distances
+            edges = [(i, j) for i in range(num_nodes) for j in range(i+1, num_nodes)]
+
+        # Compute edge lengths
+        for i, j in edges:
+            if i < num_nodes and j < num_nodes:
+                length = np.linalg.norm(coords[j] - coords[i])
+                if length > 1e-10:
+                    edge_lengths.append(length)
+
+        if len(edge_lengths) == 0:
+            return 1.0
+
+        min_length = min(edge_lengths)
+        max_length = max(edge_lengths)
+
+        if min_length > 1e-10:
+            return max_length / min_length
+        else:
+            return 1000.0  # Very bad
+
+    def grade_element(self, elem_or_id, mesh: MeshData) -> str:
+        """
+        Grade element quality
+
+        Args:
+            elem_or_id: Element object or element ID (int)
+            mesh: Mesh data
+
+        Returns:
+            Quality grade: 'Excellent', 'Good', 'Fair', 'Poor', or 'Bad'
+        """
+        # Accept either Element object or element ID
+        if isinstance(elem_or_id, int):
+            elem = mesh.get_element(elem_or_id)
+        else:
+            elem = elem_or_id
+
+        coords = np.array([
+            mesh.get_node(nid).coordinates() for nid in elem.nodes
+        ])
+
+        # Compute metrics
+        jac = self._compute_jacobian(elem, mesh)
+        aspect = self._compute_aspect_ratio(elem, mesh)
+        skew = self._compute_skewness(elem, mesh)
+
+        # Grading criteria
+        # Note: Jacobian threshold is element-size dependent
+        # For normalized grading, we use aspect ratio and skewness as primary indicators
+        if jac <= 0:
+            return 'Bad'  # Inverted or degenerate element
+        elif aspect > 50 or skew > 0.95:
+            return 'Bad'
+        elif aspect > 20 or skew > 0.85:
+            return 'Poor'
+        elif aspect > 10 or skew > 0.7:
+            return 'Fair'
+        elif aspect > 3 or skew > 0.4:
+            return 'Good'
+        else:
+            return 'Excellent'
+
+    def get_element_report(self, elem_or_id, mesh: MeshData) -> Dict:
+        """
+        Get detailed quality report for a single element
+
+        Args:
+            elem_or_id: Element object or element ID (int)
+            mesh: Mesh data
+
+        Returns:
+            Dictionary with element quality metrics
+        """
+        # Accept either Element object or element ID
+        if isinstance(elem_or_id, int):
+            elem = mesh.get_element(elem_or_id)
+            elem_id = elem_or_id
+        else:
+            elem = elem_or_id
+            elem_id = elem.id
+
+        coords = np.array([
+            mesh.get_node(nid).coordinates() for nid in elem.nodes
+        ])
+
+        # Compute angles
+        min_angle, max_angle = self._compute_angles(elem.type, coords)
+
+        report = {
+            'element_id': elem_id,
+            'element_type': elem.type.code,
+            'num_nodes': len(elem.nodes),
+            'jacobian': self._compute_jacobian(elem, mesh),
+            'aspect_ratio': self._compute_aspect_ratio(elem, mesh),
+            'skewness': self._compute_skewness(elem, mesh),
+            'size': self._compute_element_size(elem, mesh),
+            'min_angle': min_angle,
+            'max_angle': max_angle,
+            'edge_length_ratio': self._compute_edge_length_ratio(coords),
+            'quality_grade': self.grade_element(elem, mesh)
+        }
+
+        # Add warpage for hex elements
+        if elem.type.is_hex():
+            report['warpage'] = self._compute_warpage(elem, mesh)
+
+        return report
+
+    def get_quality_histogram(self, mesh: MeshData, metric: str = 'jacobian',
+                             bins: int = 20) -> Dict:
+        """
+        Get quality histogram for specified metric
+
+        Args:
+            mesh: Mesh data
+            metric: Metric name ('jacobian', 'aspect_ratio', 'skewness')
+            bins: Number of histogram bins
+
+        Returns:
+            Dictionary with histogram data: 'bins', 'counts', 'bin_edges'
+        """
+        values = []
+
+        for elem in mesh.elements.values():
+            if metric == 'jacobian':
+                value = self._compute_jacobian(elem, mesh)
+            elif metric == 'aspect_ratio':
+                value = self._compute_aspect_ratio(elem, mesh)
+            elif metric == 'skewness':
+                value = self._compute_skewness(elem, mesh)
+            elif metric == 'size':
+                value = self._compute_element_size(elem, mesh)
+            else:
+                raise ValueError(f"Unknown metric: {metric}")
+
+            values.append(value)
+
+        counts, bin_edges = np.histogram(values, bins=bins)
+
+        # Create bin labels
+        bin_labels = []
+        for i in range(len(bin_edges) - 1):
+            label = f"{bin_edges[i]:.3f}-{bin_edges[i+1]:.3f}"
+            bin_labels.append(label)
+
+        return {
+            'bins': bin_labels,
+            'counts': counts.tolist(),
+            'bin_edges': bin_edges.tolist()
+        }
+
+    def get_quality_distribution(self, mesh: MeshData) -> Dict:
+        """
+        Get distribution of element quality grades
+
+        Returns:
+            Dictionary with count of each grade
+        """
+        distribution = {
+            'Excellent': 0,
+            'Good': 0,
+            'Fair': 0,
+            'Poor': 0,
+            'Bad': 0
+        }
+
+        for elem_id in mesh.elements.keys():
+            grade = self.grade_element(elem_id, mesh)
+            distribution[grade] += 1
+
+        return distribution
+
+    def export_to_csv(self, mesh: MeshData, filepath: str):
+        """
+        Export element quality metrics to CSV file
+
+        Args:
+            mesh: Mesh data
+            filepath: Output CSV file path
+        """
+        import csv
+
+        with open(filepath, 'w', newline='') as f:
+            writer = csv.writer(f)
+
+            # Header
+            writer.writerow([
+                'element_id', 'element_type', 'jacobian', 'aspect_ratio',
+                'skewness', 'size', 'min_angle', 'max_angle',
+                'edge_length_ratio', 'quality_grade'
+            ])
+
+            # Data rows
+            for elem_id in mesh.elements.keys():
+                report = self.get_element_report(elem_id, mesh)
+                writer.writerow([
+                    report['element_id'],
+                    report['element_type'],
+                    f"{report['jacobian']:.6f}",
+                    f"{report['aspect_ratio']:.3f}",
+                    f"{report['skewness']:.3f}",
+                    f"{report['size']:.6f}",
+                    f"{report.get('min_angle', 0):.2f}",
+                    f"{report.get('max_angle', 0):.2f}",
+                    f"{report.get('edge_length_ratio', 0):.3f}",
+                    report['quality_grade']
+                ])
+
+        self.logger.info(f"Exported quality metrics to {filepath}")
+
+    def export_to_json(self, mesh: MeshData, filepath: str):
+        """
+        Export element quality metrics to JSON file
+
+        Args:
+            mesh: Mesh data
+            filepath: Output JSON file path
+        """
+        import json
+
+        # Get quality report and distribution
+        quality_report = self.check_mesh(mesh)
+        distribution = self.get_quality_distribution(mesh)
+
+        data = {
+            'summary': {
+                'num_elements': mesh.num_elements(),
+                'num_nodes': mesh.num_nodes(),
+                'num_bad_elements': quality_report.num_bad_elements,
+                'element_type': mesh.element_type.code,
+                'quality_distribution': distribution
+            },
+            'elements': []
+        }
+
+        for elem_id in mesh.elements.keys():
+            elem = mesh.get_element(elem_id)
+            elem_report = self.get_element_report(elem_id, mesh)
+
+            # Restructure for JSON (separate metrics)
+            element_data = {
+                'element_id': elem_report['element_id'],
+                'quality_grade': elem_report['quality_grade'],
+                'metrics': {
+                    'jacobian': elem_report['jacobian'],
+                    'aspect_ratio': elem_report['aspect_ratio'],
+                    'skewness': elem_report['skewness'],
+                    'size': elem_report['size'],
+                    'min_angle': elem_report['min_angle'],
+                    'max_angle': elem_report['max_angle'],
+                    'edge_length_ratio': elem_report['edge_length_ratio']
+                }
+            }
+
+            if 'warpage' in elem_report:
+                element_data['metrics']['warpage'] = elem_report['warpage']
+
+            data['elements'].append(element_data)
+
+        with open(filepath, 'w') as f:
+            json.dump(data, f, indent=2)
+
+        self.logger.info(f"Exported quality metrics to {filepath}")
+
+    def get_detailed_report(self, mesh: MeshData) -> str:
+        """
+        Get comprehensive quality report with all metrics
+
+        Returns:
+            Detailed report string
+        """
+        report = self.check_mesh(mesh)
+        distribution = self.get_quality_distribution(mesh)
+
+        lines = [
+            "="*70,
+            "COMPREHENSIVE MESH QUALITY REPORT",
+            "="*70,
+            "",
+            "Mesh Quality Report",
+            "-"*70,
+            f"Mesh Information:",
+            f"  Total Elements: {mesh.num_elements()}",
+            f"  Total Nodes: {mesh.num_nodes()}",
+            f"  Element Type: {mesh.element_type.code}",
+            "",
+            "Overall Statistics",
+            "-"*70,
+            report.summary(),
+            "",
+            "Quality Distribution",
+            "-"*70,
+            f"  Excellent: {distribution['Excellent']:6d} ({distribution['Excellent']/mesh.num_elements()*100:5.1f}%)",
+            f"  Good:      {distribution['Good']:6d} ({distribution['Good']/mesh.num_elements()*100:5.1f}%)",
+            f"  Fair:      {distribution['Fair']:6d} ({distribution['Fair']/mesh.num_elements()*100:5.1f}%)",
+            f"  Poor:      {distribution['Poor']:6d} ({distribution['Poor']/mesh.num_elements()*100:5.1f}%)",
+            f"  Bad:       {distribution['Bad']:6d} ({distribution['Bad']/mesh.num_elements()*100:5.1f}%)",
+            "",
+            "="*70,
+        ]
+
+        # Add worst elements
+        if report.bad_elements:
+            lines.extend([
+                "WORST ELEMENTS (First 10):",
+                "="*70,
+            ])
+
+            for elem_id in report.bad_elements[:10]:
+                elem_report = self.get_element_report(elem_id, mesh)
+                lines.append(
+                    f"  Element {elem_id}: "
+                    f"Jacobian={elem_report['jacobian']:.4f}, "
+                    f"Aspect={elem_report['aspect_ratio']:.2f}, "
+                    f"Grade={elem_report['quality_grade']}"
+                )
+
+            lines.append("")
+
+        # Add element details section
+        lines.extend([
+            "="*70,
+            "Element Details",
+            "="*70,
+        ])
+
+        for elem_id in sorted(mesh.elements.keys()):
+            elem_report = self.get_element_report(elem_id, mesh)
+            lines.extend([
+                f"",
+                f"Element {elem_id}:",
+                f"  Quality Grade: {elem_report['quality_grade']}",
+                f"  Jacobian:      {elem_report['jacobian']:.6f}",
+                f"  Aspect Ratio:  {elem_report['aspect_ratio']:.3f}",
+                f"  Skewness:      {elem_report['skewness']:.3f}",
+                f"  Min Angle:     {elem_report['min_angle']:.2f}°",
+                f"  Max Angle:     {elem_report['max_angle']:.2f}°",
+            ])
+
+        lines.append("")
+        lines.append("="*70)
+
+        return "\n".join(lines)
