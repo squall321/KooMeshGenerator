@@ -7,14 +7,27 @@
 
 ---
 
-## 🚀 Next Session? Start Here!
+## 🚀 Next Session? START HERE!
 
-**For continuing development**: See **[START_HERE.md](START_HERE.md)** for quick start guide
+**📌 다음 세션 시작 가이드 (3개 중 하나 선택)**:
+
+1. **[NEXT_SESSION.md](NEXT_SESSION.md)** ⭐ **가장 추천!**
+   - 모든 문서 인덱스 + 빠른 시작 가이드
+   - 5개 문서 설명 및 찾는 방법
+   - Day 2 작업 미리보기
+
+2. **[START_HERE.md](START_HERE.md)** ⭐ 빠른 시작
+   - 30초 빠른 시작 가이드
+   - Day 2 작업 상세 (코드 예제)
+
+3. **[SESSION_SUMMARY.md](SESSION_SUMMARY.md)** 📚 완전 참조
+   - Week 1-3 전체 계획
+   - 모든 코드 예제
 
 **Current Status**:
 - ✅ Day 1 Complete (Pipeline Foundation)
 - ⏳ Day 2 Next (Geometry Processing)
-- 📄 Full details: [SESSION_SUMMARY.md](SESSION_SUMMARY.md)
+- 📊 Progress: 4.8% (1/21 days)
 
 ---
 
