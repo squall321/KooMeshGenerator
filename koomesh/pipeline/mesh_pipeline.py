@@ -24,6 +24,19 @@ from koomesh.export.lsdyna_writer import LSDynaWriter
 from koomesh.templates.template_manager import TemplateManager, load_template, SimulationTemplate
 from koomesh.materials.material_library import MaterialLibrary
 from koomesh.pipeline.progress_tracker import ProgressTracker
+from koomesh.pipeline.constants import (
+    DEFAULT_MESH_SIZE_MM,
+    DEFAULT_ELEMENT_TYPE,
+    DEFAULT_GEOMETRY_TOLERANCE_MM,
+    MIN_FEATURE_SIZE_MM,
+    MIN_ACCEPTABLE_QUALITY,
+    TARGET_QUALITY_THRESHOLD,
+    MAX_REMESH_ITERATIONS,
+    DEFAULT_REFINEMENT_STRATEGY,
+    DEFAULT_CONTACT_TOLERANCE_MM,
+    DEFAULT_SELF_CONTACT_TOLERANCE_MM,
+    DEFAULT_REPORT_FORMAT,
+)
 
 
 @dataclass
@@ -42,30 +55,30 @@ class PipelineConfig:
     template_name: Optional[str] = None
 
     # Meshing parameters
-    mesh_size: float = 5.0
-    element_type: str = "tet4"
+    mesh_size: float = DEFAULT_MESH_SIZE_MM
+    element_type: str = DEFAULT_ELEMENT_TYPE
     min_element_size: Optional[float] = None
     max_element_size: Optional[float] = None
 
     # Geometry preprocessing
     clean_geometry: bool = True
-    geometry_tolerance: float = 1e-3
+    geometry_tolerance: float = DEFAULT_GEOMETRY_TOLERANCE_MM
     remove_small_features: bool = True
-    min_feature_size: float = 0.1
+    min_feature_size: float = MIN_FEATURE_SIZE_MM
 
     # Quality control
     enable_quality_check: bool = True
-    min_quality_threshold: float = 0.3
-    target_quality_threshold: float = 0.7
+    min_quality_threshold: float = MIN_ACCEPTABLE_QUALITY
+    target_quality_threshold: float = TARGET_QUALITY_THRESHOLD
     enable_auto_remesh: bool = True
-    max_remesh_iterations: int = 3
-    refinement_strategy: str = "adaptive"  # 'adaptive', 'uniform', 'quality_based'
+    max_remesh_iterations: int = MAX_REMESH_ITERATIONS
+    refinement_strategy: str = DEFAULT_REFINEMENT_STRATEGY
 
     # Contact detection
     enable_contact_detection: bool = True
-    contact_tolerance: float = 1.0
+    contact_tolerance: float = DEFAULT_CONTACT_TOLERANCE_MM
     enable_self_contact: bool = False
-    self_contact_tolerance: float = 0.5
+    self_contact_tolerance: float = DEFAULT_SELF_CONTACT_TOLERANCE_MM
 
     # Validation
     enable_validation: bool = True
@@ -77,26 +90,53 @@ class PipelineConfig:
 
     # Output options
     generate_report: bool = True
-    report_format: str = "html"  # 'html', 'pdf', 'json'
+    report_format: str = DEFAULT_REPORT_FORMAT
     verbose: bool = False
 
     def __post_init__(self):
-        """Validate configuration"""
-        # Ensure input files exist
+        """
+        Validate configuration parameters
+
+        Performs fail-fast validation to catch configuration errors early.
+
+        Raises:
+            FileNotFoundError: If input files don't exist
+            ValueError: If parameters are out of valid range
+        """
+        # Ensure all input files exist (fail-fast strategy)
         for file_path in self.input_files:
             if not Path(file_path).exists():
-                raise FileNotFoundError(f"Input file not found: {file_path}")
+                raise FileNotFoundError(
+                    f"Input file not found: {file_path}\n"
+                    f"Please check the file path and try again."
+                )
 
-        # Validate mesh size
+        # Validate mesh size is positive and reasonable
         if self.mesh_size <= 0:
-            raise ValueError(f"mesh_size must be positive, got {self.mesh_size}")
+            raise ValueError(
+                f"mesh_size must be positive, got {self.mesh_size}\n"
+                f"Typical values: 1-50 mm depending on geometry size"
+            )
 
-        # Validate quality thresholds
+        # Validate quality thresholds are in valid range [0, 1]
         if not 0 <= self.min_quality_threshold <= 1:
-            raise ValueError(f"min_quality_threshold must be in [0, 1], got {self.min_quality_threshold}")
+            raise ValueError(
+                f"min_quality_threshold must be in [0, 1], got {self.min_quality_threshold}\n"
+                f"Recommended: {MIN_ACCEPTABLE_QUALITY} (LS-DYNA minimum)"
+            )
 
         if not 0 <= self.target_quality_threshold <= 1:
-            raise ValueError(f"target_quality_threshold must be in [0, 1], got {self.target_quality_threshold}")
+            raise ValueError(
+                f"target_quality_threshold must be in [0, 1], got {self.target_quality_threshold}\n"
+                f"Recommended: {TARGET_QUALITY_THRESHOLD} for good accuracy"
+            )
+
+        # Ensure target threshold is higher than minimum
+        if self.target_quality_threshold < self.min_quality_threshold:
+            raise ValueError(
+                f"target_quality_threshold ({self.target_quality_threshold}) must be >= "
+                f"min_quality_threshold ({self.min_quality_threshold})"
+            )
 
 
 @dataclass

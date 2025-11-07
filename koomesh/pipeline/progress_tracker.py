@@ -10,6 +10,11 @@ from dataclasses import dataclass
 from enum import Enum
 import time
 
+from koomesh.pipeline.constants import (
+    MIN_PROGRESS_VALUE,
+    MAX_PROGRESS_VALUE,
+)
+
 
 class StageStatus(Enum):
     """Status of a pipeline stage"""
@@ -149,8 +154,8 @@ class ProgressTracker:
         if name not in self.stages:
             raise ValueError(f"Stage '{name}' not found")
 
-        # Clamp progress to [0.0, 1.0]
-        progress = max(0.0, min(1.0, progress))
+        # Clamp progress to valid range
+        progress = max(MIN_PROGRESS_VALUE, min(MAX_PROGRESS_VALUE, progress))
 
         self.stages[name].progress = progress
         if message:

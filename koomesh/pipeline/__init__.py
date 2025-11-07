@@ -12,6 +12,7 @@ from koomesh.pipeline.mesh_pipeline import (
     PipelineConfig,
     PipelineResult
 )
+from koomesh.pipeline import constants
 
 __all__ = [
     'ProgressTracker',
@@ -20,4 +21,5 @@ __all__ = [
     'MeshGenerationPipeline',
     'PipelineConfig',
     'PipelineResult',
+    'constants',
 ]
