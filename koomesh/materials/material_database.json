@@ -1,7 +1,7 @@
 {
   "_metadata": {
-    "version": "2.0.0",
-    "total_materials": 156,
+    "version": "2.1.0",
+    "total_materials": 102,
     "last_updated": "2025-11-07",
     "categories": [
       "steels",
@@ -16,7 +16,9 @@
       "concrete",
       "ceramics",
       "glass",
-      "wood"
+      "wood",
+      "magnesium_alloys",
+      "other_metals"
     ]
   },
   "steels": {
@@ -32,7 +34,10 @@
       "metadata": {
         "description": "Medium carbon steel",
         "grade": "AISI 1045",
-        "applications": ["automotive", "machinery"],
+        "applications": [
+          "automotive",
+          "machinery"
+        ],
         "temperature_max_c": 400
       }
     },
@@ -43,12 +48,15 @@
       "poisson_ratio": 0.29,
       "yield_stress": 250000000.0,
       "tangent_modulus": 2000000000.0,
-      "failure_strain": 0.20,
+      "failure_strain": 0.2,
       "unit_system": "si",
       "metadata": {
         "description": "Mild steel (low carbon)",
         "grade": "A36",
-        "applications": ["construction", "structural"],
+        "applications": [
+          "construction",
+          "structural"
+        ],
         "weldable": true
       }
     },
@@ -64,7 +72,10 @@
       "metadata": {
         "description": "High-strength alloy steel",
         "grade": "AISI 4340",
-        "applications": ["aerospace", "automotive"],
+        "applications": [
+          "aerospace",
+          "automotive"
+        ],
         "heat_treatable": true
       }
     },
@@ -80,7 +91,10 @@
       "metadata": {
         "description": "High-strength low-alloy steel",
         "grade": "HSLA Grade 50",
-        "applications": ["construction", "bridges"]
+        "applications": [
+          "construction",
+          "bridges"
+        ]
       }
     },
     "Steel_HSLA_80": {
@@ -95,7 +109,10 @@
       "metadata": {
         "description": "High-strength low-alloy steel",
         "grade": "HSLA Grade 80",
-        "applications": ["heavy equipment", "offshore"]
+        "applications": [
+          "heavy equipment",
+          "offshore"
+        ]
       }
     },
     "Stainless_304": {
@@ -105,12 +122,16 @@
       "poisson_ratio": 0.29,
       "yield_stress": 215000000.0,
       "tangent_modulus": 2000000000.0,
-      "failure_strain": 0.40,
+      "failure_strain": 0.4,
       "unit_system": "si",
       "metadata": {
         "description": "Austenitic stainless steel",
         "grade": "304",
-        "applications": ["food", "medical", "chemical"],
+        "applications": [
+          "food",
+          "medical",
+          "chemical"
+        ],
         "corrosion_resistant": true
       }
     },
@@ -121,12 +142,15 @@
       "poisson_ratio": 0.27,
       "yield_stress": 290000000.0,
       "tangent_modulus": 2000000000.0,
-      "failure_strain": 0.40,
+      "failure_strain": 0.4,
       "unit_system": "si",
       "metadata": {
         "description": "Molybdenum-bearing stainless steel",
         "grade": "316",
-        "applications": ["marine", "medical implants"],
+        "applications": [
+          "marine",
+          "medical implants"
+        ],
         "corrosion_resistant": true
       }
     },
@@ -142,7 +166,10 @@
       "metadata": {
         "description": "Martensitic stainless steel",
         "grade": "410",
-        "applications": ["cutlery", "fasteners"],
+        "applications": [
+          "cutlery",
+          "fasteners"
+        ],
         "heat_treatable": true
       }
     },
@@ -158,7 +185,10 @@
       "metadata": {
         "description": "High-carbon high-chromium tool steel",
         "grade": "D2",
-        "applications": ["tooling", "dies"],
+        "applications": [
+          "tooling",
+          "dies"
+        ],
         "hardness_hrc": 60
       }
     },
@@ -169,19 +199,22 @@
       "poisson_ratio": 0.29,
       "yield_stress": 1380000000.0,
       "tangent_modulus": 4000000000.0,
-      "failure_strain": 0.10,
+      "failure_strain": 0.1,
       "unit_system": "si",
       "metadata": {
         "description": "Chromium spring steel",
         "grade": "5160",
-        "applications": ["springs", "automotive"]
+        "applications": [
+          "springs",
+          "automotive"
+        ]
       }
     },
     "Steel_DP600": {
       "material_type": "elastic_plastic",
       "density": 7800.0,
       "elastic_modulus": 210000000000.0,
-      "poisson_ratio": 0.30,
+      "poisson_ratio": 0.3,
       "yield_stress": 400000000.0,
       "tangent_modulus": 3000000000.0,
       "failure_strain": 0.18,
@@ -189,7 +222,10 @@
       "metadata": {
         "description": "Dual-phase steel",
         "grade": "DP600",
-        "applications": ["automotive body", "crash structures"],
+        "applications": [
+          "automotive body",
+          "crash structures"
+        ],
         "ahss": true
       }
     },
@@ -197,7 +233,7 @@
       "material_type": "elastic_plastic",
       "density": 7850.0,
       "elastic_modulus": 210000000000.0,
-      "poisson_ratio": 0.30,
+      "poisson_ratio": 0.3,
       "yield_stress": 600000000.0,
       "tangent_modulus": 4000000000.0,
       "failure_strain": 0.14,
@@ -205,7 +241,10 @@
       "metadata": {
         "description": "Advanced high-strength dual-phase steel",
         "grade": "DP980",
-        "applications": ["automotive", "crash safety"],
+        "applications": [
+          "automotive",
+          "crash safety"
+        ],
         "ahss": true
       }
     },
@@ -213,7 +252,7 @@
       "material_type": "elastic_plastic",
       "density": 7800.0,
       "elastic_modulus": 200000000000.0,
-      "poisson_ratio": 0.30,
+      "poisson_ratio": 0.3,
       "yield_stress": 480000000.0,
       "tangent_modulus": 3500000000.0,
       "failure_strain": 0.26,
@@ -221,7 +260,10 @@
       "metadata": {
         "description": "Transformation-induced plasticity steel",
         "grade": "TRIP780",
-        "applications": ["automotive", "energy absorption"],
+        "applications": [
+          "automotive",
+          "energy absorption"
+        ],
         "ahss": true
       }
     },
@@ -229,7 +271,7 @@
       "material_type": "elastic_plastic",
       "density": 8100.0,
       "elastic_modulus": 190000000000.0,
-      "poisson_ratio": 0.30,
+      "poisson_ratio": 0.3,
       "yield_stress": 2070000000.0,
       "tangent_modulus": 6000000000.0,
       "failure_strain": 0.08,
@@ -237,8 +279,70 @@
       "metadata": {
         "description": "Maraging steel Grade 300",
         "grade": "18Ni-300",
-        "applications": ["aerospace", "tooling"],
+        "applications": [
+          "aerospace",
+          "tooling"
+        ],
         "ultra_high_strength": true
+      }
+    },
+    "Steel_A572_Grade_50": {
+      "material_type": "elastic_plastic",
+      "density": 7850.0,
+      "elastic_modulus": 200000000000.0,
+      "poisson_ratio": 0.3,
+      "yield_stress": 345000000.0,
+      "tangent_modulus": 2500000000.0,
+      "failure_strain": 0.18,
+      "unit_system": "si",
+      "metadata": {
+        "description": "ASTM A572 Grade 50 structural steel",
+        "grade": "A572-50",
+        "applications": [
+          "structural",
+          "bridges",
+          "buildings"
+        ]
+      }
+    },
+    "Steel_HY80": {
+      "material_type": "elastic_plastic",
+      "density": 7850.0,
+      "elastic_modulus": 207000000000.0,
+      "poisson_ratio": 0.3,
+      "yield_stress": 550000000.0,
+      "tangent_modulus": 3500000000.0,
+      "failure_strain": 0.18,
+      "unit_system": "si",
+      "metadata": {
+        "description": "HY-80 naval steel",
+        "grade": "HY-80",
+        "applications": [
+          "naval",
+          "submarine",
+          "defense"
+        ],
+        "high_strength": true
+      }
+    },
+    "Steel_HY100": {
+      "material_type": "elastic_plastic",
+      "density": 7850.0,
+      "elastic_modulus": 207000000000.0,
+      "poisson_ratio": 0.3,
+      "yield_stress": 690000000.0,
+      "tangent_modulus": 4000000000.0,
+      "failure_strain": 0.15,
+      "unit_system": "si",
+      "metadata": {
+        "description": "HY-100 high-strength naval steel",
+        "grade": "HY-100",
+        "applications": [
+          "naval",
+          "submarine",
+          "defense"
+        ],
+        "high_strength": true
       }
     }
   },
@@ -255,7 +359,11 @@
       "metadata": {
         "description": "Heat-treated aluminum alloy",
         "grade": "6061-T6",
-        "applications": ["structural", "automotive", "aerospace"],
+        "applications": [
+          "structural",
+          "automotive",
+          "aerospace"
+        ],
         "weldable": true
       }
     },
@@ -271,7 +379,10 @@
       "metadata": {
         "description": "High-strength aluminum alloy",
         "grade": "7075-T6",
-        "applications": ["aerospace", "defense"],
+        "applications": [
+          "aerospace",
+          "defense"
+        ],
         "high_strength": true
       }
     },
@@ -287,7 +398,10 @@
       "metadata": {
         "description": "Copper-bearing aluminum alloy",
         "grade": "2024-T3",
-        "applications": ["aerospace", "aircraft structures"]
+        "applications": [
+          "aerospace",
+          "aircraft structures"
+        ]
       }
     },
     "Aluminum_5052_H32": {
@@ -302,7 +416,10 @@
       "metadata": {
         "description": "Magnesium-bearing aluminum alloy",
         "grade": "5052-H32",
-        "applications": ["marine", "sheet metal"],
+        "applications": [
+          "marine",
+          "sheet metal"
+        ],
         "corrosion_resistant": true
       }
     },
@@ -313,12 +430,15 @@
       "poisson_ratio": 0.33,
       "yield_stress": 145000000.0,
       "tangent_modulus": 700000000.0,
-      "failure_strain": 0.20,
+      "failure_strain": 0.2,
       "unit_system": "si",
       "metadata": {
         "description": "Manganese-bearing aluminum alloy",
         "grade": "3003-H14",
-        "applications": ["cooking utensils", "chemical equipment"]
+        "applications": [
+          "cooking utensils",
+          "chemical equipment"
+        ]
       }
     },
     "Aluminum_Cast_A356_T6": {
@@ -333,7 +453,10 @@
       "metadata": {
         "description": "Cast aluminum-silicon-magnesium alloy",
         "grade": "A356-T6",
-        "applications": ["automotive castings", "wheels"]
+        "applications": [
+          "automotive castings",
+          "wheels"
+        ]
       }
     },
     "Aluminum_7050_T7451": {
@@ -348,7 +471,50 @@
       "metadata": {
         "description": "High-toughness aerospace aluminum",
         "grade": "7050-T7451",
-        "applications": ["aerospace", "thick sections"]
+        "applications": [
+          "aerospace",
+          "thick sections"
+        ]
+      }
+    },
+    "Aluminum_1100_O": {
+      "material_type": "elastic_plastic",
+      "density": 2710.0,
+      "elastic_modulus": 69000000000.0,
+      "poisson_ratio": 0.33,
+      "yield_stress": 34000000.0,
+      "tangent_modulus": 500000000.0,
+      "failure_strain": 0.35,
+      "unit_system": "si",
+      "metadata": {
+        "description": "Commercially pure aluminum (annealed)",
+        "grade": "1100-O",
+        "applications": [
+          "chemical equipment",
+          "food containers"
+        ],
+        "excellent_corrosion_resistance": true
+      }
+    },
+    "Aluminum_5083_H321": {
+      "material_type": "elastic_plastic",
+      "density": 2660.0,
+      "elastic_modulus": 72000000000.0,
+      "poisson_ratio": 0.33,
+      "yield_stress": 228000000.0,
+      "tangent_modulus": 900000000.0,
+      "failure_strain": 0.16,
+      "unit_system": "si",
+      "metadata": {
+        "description": "Marine-grade aluminum alloy",
+        "grade": "5083-H321",
+        "applications": [
+          "marine",
+          "shipbuilding",
+          "offshore"
+        ],
+        "corrosion_resistant": true,
+        "weldable": true
       }
     }
   },
@@ -360,12 +526,16 @@
       "poisson_ratio": 0.34,
       "yield_stress": 345000000.0,
       "tangent_modulus": 1500000000.0,
-      "failure_strain": 0.20,
+      "failure_strain": 0.2,
       "unit_system": "si",
       "metadata": {
         "description": "Commercially pure titanium",
         "grade": "Grade 2",
-        "applications": ["chemical", "marine", "medical"],
+        "applications": [
+          "chemical",
+          "marine",
+          "medical"
+        ],
         "corrosion_resistant": true
       }
     },
@@ -381,7 +551,11 @@
       "metadata": {
         "description": "Alpha-beta titanium alloy (most common)",
         "grade": "Ti-6Al-4V",
-        "applications": ["aerospace", "medical implants", "automotive"],
+        "applications": [
+          "aerospace",
+          "medical implants",
+          "automotive"
+        ],
         "biocompatible": true
       }
     },
@@ -397,7 +571,10 @@
       "metadata": {
         "description": "Extra-low interstitial Ti-6Al-4V",
         "grade": "Ti-6Al-4V ELI",
-        "applications": ["medical implants", "biomedical"],
+        "applications": [
+          "medical implants",
+          "biomedical"
+        ],
         "biocompatible": true
       }
     },
@@ -408,12 +585,15 @@
       "poisson_ratio": 0.342,
       "yield_stress": 830000000.0,
       "tangent_modulus": 2000000000.0,
-      "failure_strain": 0.10,
+      "failure_strain": 0.1,
       "unit_system": "si",
       "metadata": {
         "description": "Alpha-beta titanium alloy",
         "grade": "Grade 5 (Ti-6Al-4V)",
-        "applications": ["aerospace", "marine"]
+        "applications": [
+          "aerospace",
+          "marine"
+        ]
       }
     },
     "Titanium_Ti5Al2_5Sn": {
@@ -428,7 +608,30 @@
       "metadata": {
         "description": "Alpha titanium alloy",
         "grade": "Ti-5Al-2.5Sn",
-        "applications": ["cryogenic", "aerospace"]
+        "applications": [
+          "cryogenic",
+          "aerospace"
+        ]
+      }
+    },
+    "Titanium_Beta_C": {
+      "material_type": "elastic_plastic",
+      "density": 4820.0,
+      "elastic_modulus": 100000000000.0,
+      "poisson_ratio": 0.33,
+      "yield_stress": 1100000000.0,
+      "tangent_modulus": 2500000000.0,
+      "failure_strain": 0.1,
+      "unit_system": "si",
+      "metadata": {
+        "description": "Beta titanium alloy (Ti-3Al-8V-6Cr-4Mo-4Zr)",
+        "grade": "Beta-C",
+        "applications": [
+          "aerospace",
+          "medical",
+          "springs"
+        ],
+        "high_strength": true
       }
     }
   },
@@ -440,12 +643,15 @@
       "poisson_ratio": 0.34,
       "yield_stress": 69000000.0,
       "tangent_modulus": 800000000.0,
-      "failure_strain": 0.40,
+      "failure_strain": 0.4,
       "unit_system": "si",
       "metadata": {
         "description": "Electrolytic tough pitch copper",
         "grade": "C11000",
-        "applications": ["electrical", "thermal"],
+        "applications": [
+          "electrical",
+          "thermal"
+        ],
         "conductivity_high": true
       }
     },
@@ -461,7 +667,10 @@
       "metadata": {
         "description": "Tin bronze (88Cu-8Sn-4Zn)",
         "grade": "C90700",
-        "applications": ["bearings", "gears"]
+        "applications": [
+          "bearings",
+          "gears"
+        ]
       }
     },
     "Brass_C26000": {
@@ -471,27 +680,33 @@
       "poisson_ratio": 0.34,
       "yield_stress": 125000000.0,
       "tangent_modulus": 900000000.0,
-      "failure_strain": 0.60,
+      "failure_strain": 0.6,
       "unit_system": "si",
       "metadata": {
         "description": "Cartridge brass (70Cu-30Zn)",
         "grade": "C26000",
-        "applications": ["cartridge cases", "sheet metal"]
+        "applications": [
+          "cartridge cases",
+          "sheet metal"
+        ]
       }
     },
     "CuBe_C17200": {
       "material_type": "elastic_plastic",
       "density": 8360.0,
       "elastic_modulus": 128000000000.0,
-      "poisson_ratio": 0.30,
+      "poisson_ratio": 0.3,
       "yield_stress": 1100000000.0,
       "tangent_modulus": 2000000000.0,
-      "failure_strain": 0.10,
+      "failure_strain": 0.1,
       "unit_system": "si",
       "metadata": {
         "description": "Beryllium copper",
         "grade": "C17200",
-        "applications": ["springs", "electrical contacts"],
+        "applications": [
+          "springs",
+          "electrical contacts"
+        ],
         "high_strength": true
       }
     }
@@ -504,12 +719,16 @@
       "poisson_ratio": 0.31,
       "yield_stress": 415000000.0,
       "tangent_modulus": 2500000000.0,
-      "failure_strain": 0.30,
+      "failure_strain": 0.3,
       "unit_system": "si",
       "metadata": {
         "description": "Nickel-chromium-molybdenum alloy",
         "grade": "Inconel 625",
-        "applications": ["aerospace", "chemical", "marine"],
+        "applications": [
+          "aerospace",
+          "chemical",
+          "marine"
+        ],
         "high_temperature": true,
         "corrosion_resistant": true
       }
@@ -526,7 +745,10 @@
       "metadata": {
         "description": "Age-hardenable nickel-chromium alloy",
         "grade": "Inconel 718",
-        "applications": ["gas turbines", "rocket engines"],
+        "applications": [
+          "gas turbines",
+          "rocket engines"
+        ],
         "high_temperature": true
       }
     },
@@ -537,12 +759,15 @@
       "poisson_ratio": 0.31,
       "yield_stress": 355000000.0,
       "tangent_modulus": 2200000000.0,
-      "failure_strain": 0.40,
+      "failure_strain": 0.4,
       "unit_system": "si",
       "metadata": {
         "description": "Nickel-molybdenum-chromium alloy",
         "grade": "Hastelloy C-276",
-        "applications": ["chemical processing", "pollution control"],
+        "applications": [
+          "chemical processing",
+          "pollution control"
+        ],
         "corrosion_resistant": true
       }
     },
@@ -553,12 +778,15 @@
       "poisson_ratio": 0.32,
       "yield_stress": 240000000.0,
       "tangent_modulus": 1800000000.0,
-      "failure_strain": 0.40,
+      "failure_strain": 0.4,
       "unit_system": "si",
       "metadata": {
         "description": "Nickel-copper alloy",
         "grade": "Monel 400",
-        "applications": ["marine", "chemical"],
+        "applications": [
+          "marine",
+          "chemical"
+        ],
         "corrosion_resistant": true
       }
     }
@@ -575,7 +803,10 @@
       "unit_system": "si",
       "metadata": {
         "description": "Acrylonitrile Butadiene Styrene",
-        "applications": ["consumer products", "automotive trim"],
+        "applications": [
+          "consumer products",
+          "automotive trim"
+        ],
         "thermoplastic": true
       }
     },
@@ -586,11 +817,14 @@
       "poisson_ratio": 0.37,
       "yield_stress": 62000000.0,
       "tangent_modulus": 150000000.0,
-      "failure_strain": 0.10,
+      "failure_strain": 0.1,
       "unit_system": "si",
       "metadata": {
         "description": "Engineering thermoplastic",
-        "applications": ["safety equipment", "optical"],
+        "applications": [
+          "safety equipment",
+          "optical"
+        ],
         "impact_resistant": true
       }
     },
@@ -601,11 +835,15 @@
       "poisson_ratio": 0.39,
       "yield_stress": 80000000.0,
       "tangent_modulus": 200000000.0,
-      "failure_strain": 0.20,
+      "failure_strain": 0.2,
       "unit_system": "si",
       "metadata": {
         "description": "Polyamide 6",
-        "applications": ["bearings", "gears", "textiles"],
+        "applications": [
+          "bearings",
+          "gears",
+          "textiles"
+        ],
         "low_friction": true
       }
     },
@@ -620,7 +858,10 @@
       "unit_system": "si",
       "metadata": {
         "description": "Polyamide 6,6",
-        "applications": ["automotive", "electrical"],
+        "applications": [
+          "automotive",
+          "electrical"
+        ],
         "temperature_max_c": 120
       }
     },
@@ -628,14 +869,17 @@
       "material_type": "elastic_plastic",
       "density": 1320.0,
       "elastic_modulus": 3600000000.0,
-      "poisson_ratio": 0.40,
+      "poisson_ratio": 0.4,
       "yield_stress": 100000000.0,
       "tangent_modulus": 250000000.0,
       "failure_strain": 0.05,
       "unit_system": "si",
       "metadata": {
         "description": "Polyetheretherketone",
-        "applications": ["aerospace", "medical implants"],
+        "applications": [
+          "aerospace",
+          "medical implants"
+        ],
         "high_performance": true,
         "temperature_max_c": 250
       }
@@ -647,11 +891,15 @@
       "poisson_ratio": 0.46,
       "yield_stress": 23000000.0,
       "tangent_modulus": 50000000.0,
-      "failure_strain": 0.30,
+      "failure_strain": 0.3,
       "unit_system": "si",
       "metadata": {
         "description": "Polytetrafluoroethylene",
-        "applications": ["seals", "gaskets", "bearings"],
+        "applications": [
+          "seals",
+          "gaskets",
+          "bearings"
+        ],
         "low_friction": true,
         "chemical_resistant": true
       }
@@ -663,11 +911,15 @@
       "poisson_ratio": 0.38,
       "yield_stress": 60000000.0,
       "tangent_modulus": 180000000.0,
-      "failure_strain": 0.10,
+      "failure_strain": 0.1,
       "unit_system": "si",
       "metadata": {
         "description": "Polyethylene Terephthalate",
-        "applications": ["bottles", "packaging", "textiles"]
+        "applications": [
+          "bottles",
+          "packaging",
+          "textiles"
+        ]
       }
     },
     "PMMA_Acrylic": {
@@ -679,7 +931,10 @@
       "unit_system": "si",
       "metadata": {
         "description": "Polymethyl Methacrylate (Acrylic)",
-        "applications": ["optical", "signage"],
+        "applications": [
+          "optical",
+          "signage"
+        ],
         "transparent": true
       }
     },
@@ -694,7 +949,11 @@
       "unit_system": "si",
       "metadata": {
         "description": "Polypropylene",
-        "applications": ["packaging", "automotive", "textiles"],
+        "applications": [
+          "packaging",
+          "automotive",
+          "textiles"
+        ],
         "chemical_resistant": true
       }
     },
@@ -705,11 +964,15 @@
       "poisson_ratio": 0.46,
       "yield_stress": 26000000.0,
       "tangent_modulus": 80000000.0,
-      "failure_strain": 0.20,
+      "failure_strain": 0.2,
       "unit_system": "si",
       "metadata": {
         "description": "High-Density Polyethylene",
-        "applications": ["pipes", "bottles", "storage tanks"]
+        "applications": [
+          "pipes",
+          "bottles",
+          "storage tanks"
+        ]
       }
     },
     "PVC_Rigid": {
@@ -723,7 +986,89 @@
       "unit_system": "si",
       "metadata": {
         "description": "Rigid Polyvinyl Chloride",
-        "applications": ["pipes", "construction"]
+        "applications": [
+          "pipes",
+          "construction"
+        ]
+      }
+    },
+    "PLA": {
+      "material_type": "elastic_plastic",
+      "density": 1240.0,
+      "elastic_modulus": 3500000000.0,
+      "poisson_ratio": 0.36,
+      "yield_stress": 60000000.0,
+      "tangent_modulus": 200000000.0,
+      "failure_strain": 0.06,
+      "unit_system": "si",
+      "metadata": {
+        "description": "Polylactic Acid (biodegradable)",
+        "applications": [
+          "3D printing",
+          "packaging",
+          "medical"
+        ],
+        "biodegradable": true
+      }
+    },
+    "PETG": {
+      "material_type": "elastic_plastic",
+      "density": 1270.0,
+      "elastic_modulus": 2100000000.0,
+      "poisson_ratio": 0.38,
+      "yield_stress": 50000000.0,
+      "tangent_modulus": 150000000.0,
+      "failure_strain": 0.15,
+      "unit_system": "si",
+      "metadata": {
+        "description": "Glycol-modified PET",
+        "applications": [
+          "3D printing",
+          "packaging",
+          "displays"
+        ],
+        "impact_resistant": true
+      }
+    },
+    "PSU_Polysulfone": {
+      "material_type": "elastic_plastic",
+      "density": 1240.0,
+      "elastic_modulus": 2480000000.0,
+      "poisson_ratio": 0.37,
+      "yield_stress": 70000000.0,
+      "tangent_modulus": 180000000.0,
+      "failure_strain": 0.5,
+      "unit_system": "si",
+      "metadata": {
+        "description": "Polysulfone high-performance thermoplastic",
+        "applications": [
+          "medical",
+          "food service",
+          "automotive"
+        ],
+        "high_temperature": true,
+        "temperature_max_c": 170
+      }
+    },
+    "PEI_Ultem": {
+      "material_type": "elastic_plastic",
+      "density": 1270.0,
+      "elastic_modulus": 3200000000.0,
+      "poisson_ratio": 0.4,
+      "yield_stress": 105000000.0,
+      "tangent_modulus": 250000000.0,
+      "failure_strain": 0.06,
+      "unit_system": "si",
+      "metadata": {
+        "description": "Polyetherimide (Ultem)",
+        "applications": [
+          "aerospace",
+          "automotive",
+          "electronics"
+        ],
+        "high_performance": true,
+        "temperature_max_c": 217,
+        "flame_resistant": true
       }
     }
   },
@@ -732,13 +1077,17 @@
       "material_type": "elastic",
       "density": 1550.0,
       "elastic_modulus": 140000000000.0,
-      "poisson_ratio": 0.30,
+      "poisson_ratio": 0.3,
       "yield_stress": null,
       "unit_system": "si",
       "metadata": {
         "description": "Unidirectional carbon fiber/epoxy (longitudinal)",
-        "fiber_volume": 0.60,
-        "applications": ["aerospace", "automotive", "sporting goods"],
+        "fiber_volume": 0.6,
+        "applications": [
+          "aerospace",
+          "automotive",
+          "sporting goods"
+        ],
         "anisotropic": true
       }
     },
@@ -746,13 +1095,16 @@
       "material_type": "elastic",
       "density": 1500.0,
       "elastic_modulus": 70000000000.0,
-      "poisson_ratio": 0.10,
+      "poisson_ratio": 0.1,
       "yield_stress": null,
       "unit_system": "si",
       "metadata": {
         "description": "Woven carbon fiber/epoxy",
         "fiber_volume": 0.55,
-        "applications": ["aerospace", "automotive"],
+        "applications": [
+          "aerospace",
+          "automotive"
+        ],
         "quasi_isotropic": true
       }
     },
@@ -765,8 +1117,11 @@
       "unit_system": "si",
       "metadata": {
         "description": "E-glass fiber/epoxy composite",
-        "fiber_volume": 0.50,
-        "applications": ["marine", "wind turbines"]
+        "fiber_volume": 0.5,
+        "applications": [
+          "marine",
+          "wind turbines"
+        ]
       }
     },
     "Kevlar_Epoxy": {
@@ -778,9 +1133,46 @@
       "unit_system": "si",
       "metadata": {
         "description": "Aramid fiber/epoxy composite",
-        "fiber_volume": 0.60,
-        "applications": ["ballistic protection", "aerospace"],
+        "fiber_volume": 0.6,
+        "applications": [
+          "ballistic protection",
+          "aerospace"
+        ],
         "impact_resistant": true
+      }
+    },
+    "Fiberglass_SMC": {
+      "material_type": "elastic",
+      "density": 1800.0,
+      "elastic_modulus": 13000000000.0,
+      "poisson_ratio": 0.3,
+      "yield_stress": null,
+      "unit_system": "si",
+      "metadata": {
+        "description": "Sheet Molding Compound (fiberglass/polyester)",
+        "fiber_volume": 0.3,
+        "applications": [
+          "automotive body panels",
+          "electrical"
+        ],
+        "cost_effective": true
+      }
+    },
+    "Boron_Epoxy": {
+      "material_type": "elastic",
+      "density": 2000.0,
+      "elastic_modulus": 210000000000.0,
+      "poisson_ratio": 0.21,
+      "yield_stress": null,
+      "unit_system": "si",
+      "metadata": {
+        "description": "Boron fiber/epoxy composite",
+        "fiber_volume": 0.5,
+        "applications": [
+          "aerospace",
+          "military"
+        ],
+        "very_high_stiffness": true
       }
     }
   },
@@ -789,36 +1181,45 @@
       "material_type": "foam",
       "density": 50.0,
       "elastic_modulus": 8000000.0,
-      "poisson_ratio": 0.10,
+      "poisson_ratio": 0.1,
       "yield_stress": 200000.0,
       "unit_system": "si",
       "metadata": {
-        "description": "Rigid polyurethane foam (50 kg/m³)",
-        "applications": ["insulation", "packaging"]
+        "description": "Rigid polyurethane foam (50 kg/m\u00b3)",
+        "applications": [
+          "insulation",
+          "packaging"
+        ]
       }
     },
     "Foam_PU_Rigid_100": {
       "material_type": "foam",
       "density": 100.0,
       "elastic_modulus": 25000000.0,
-      "poisson_ratio": 0.10,
+      "poisson_ratio": 0.1,
       "yield_stress": 500000.0,
       "unit_system": "si",
       "metadata": {
-        "description": "Rigid polyurethane foam (100 kg/m³)",
-        "applications": ["structural cores", "sandwich panels"]
+        "description": "Rigid polyurethane foam (100 kg/m\u00b3)",
+        "applications": [
+          "structural cores",
+          "sandwich panels"
+        ]
       }
     },
     "Foam_EPS_25": {
       "material_type": "foam",
       "density": 25.0,
       "elastic_modulus": 3500000.0,
-      "poisson_ratio": 0.10,
+      "poisson_ratio": 0.1,
       "yield_stress": 80000.0,
       "unit_system": "si",
       "metadata": {
-        "description": "Expanded polystyrene foam (25 kg/m³)",
-        "applications": ["packaging", "insulation"]
+        "description": "Expanded polystyrene foam (25 kg/m\u00b3)",
+        "applications": [
+          "packaging",
+          "insulation"
+        ]
       }
     },
     "Foam_Aluminum_300": {
@@ -830,7 +1231,43 @@
       "unit_system": "si",
       "metadata": {
         "description": "Closed-cell aluminum foam",
-        "applications": ["automotive", "aerospace", "energy absorption"]
+        "applications": [
+          "automotive",
+          "aerospace",
+          "energy absorption"
+        ]
+      }
+    },
+    "Foam_PU_Flexible_30": {
+      "material_type": "foam",
+      "density": 30.0,
+      "elastic_modulus": 150000.0,
+      "poisson_ratio": 0.1,
+      "yield_stress": 15000.0,
+      "unit_system": "si",
+      "metadata": {
+        "description": "Flexible polyurethane foam",
+        "applications": [
+          "seating",
+          "cushioning",
+          "packaging"
+        ]
+      }
+    },
+    "Foam_Polystyrene_40": {
+      "material_type": "foam",
+      "density": 40.0,
+      "elastic_modulus": 5000000.0,
+      "poisson_ratio": 0.1,
+      "yield_stress": 120000.0,
+      "unit_system": "si",
+      "metadata": {
+        "description": "Expanded polystyrene foam",
+        "applications": [
+          "insulation",
+          "packaging",
+          "construction"
+        ]
       }
     }
   },
@@ -845,7 +1282,11 @@
       "metadata": {
         "description": "Natural rubber (vulcanized)",
         "hardness_shore_a": 50,
-        "applications": ["tires", "seals", "dampers"]
+        "applications": [
+          "tires",
+          "seals",
+          "dampers"
+        ]
       }
     },
     "Rubber_Neoprene": {
@@ -858,7 +1299,11 @@
       "metadata": {
         "description": "Polychloroprene rubber",
         "hardness_shore_a": 60,
-        "applications": ["seals", "gaskets", "wetsuits"],
+        "applications": [
+          "seals",
+          "gaskets",
+          "wetsuits"
+        ],
         "oil_resistant": true
       }
     },
@@ -872,7 +1317,11 @@
       "metadata": {
         "description": "Silicone elastomer",
         "hardness_shore_a": 50,
-        "applications": ["medical", "seals", "high-temp"],
+        "applications": [
+          "medical",
+          "seals",
+          "high-temp"
+        ],
         "temperature_max_c": 200
       }
     },
@@ -886,8 +1335,50 @@
       "metadata": {
         "description": "Polyurethane rubber",
         "hardness_shore_a": 80,
-        "applications": ["wheels", "seals", "bushings"],
+        "applications": [
+          "wheels",
+          "seals",
+          "bushings"
+        ],
         "abrasion_resistant": true
+      }
+    },
+    "EPDM_Rubber": {
+      "material_type": "hyperelastic",
+      "density": 1150.0,
+      "elastic_modulus": 1800000.0,
+      "poisson_ratio": 0.49,
+      "yield_stress": null,
+      "unit_system": "si",
+      "metadata": {
+        "description": "Ethylene Propylene Diene Monomer rubber",
+        "hardness_shore_a": 60,
+        "applications": [
+          "automotive seals",
+          "roofing",
+          "electrical"
+        ],
+        "weather_resistant": true,
+        "ozone_resistant": true
+      }
+    },
+    "Viton_FKM": {
+      "material_type": "hyperelastic",
+      "density": 1850.0,
+      "elastic_modulus": 3000000.0,
+      "poisson_ratio": 0.49,
+      "yield_stress": null,
+      "unit_system": "si",
+      "metadata": {
+        "description": "Fluoroelastomer (Viton)",
+        "hardness_shore_a": 75,
+        "applications": [
+          "aerospace",
+          "automotive",
+          "chemical"
+        ],
+        "chemical_resistant": true,
+        "temperature_max_c": 230
       }
     }
   },
@@ -896,52 +1387,115 @@
       "material_type": "elastic",
       "density": 2300.0,
       "elastic_modulus": 23000000000.0,
-      "poisson_ratio": 0.20,
+      "poisson_ratio": 0.2,
       "yield_stress": null,
       "unit_system": "si",
       "metadata": {
         "description": "Normal strength concrete",
         "compressive_strength": 20000000.0,
-        "applications": ["foundations", "slabs"]
+        "applications": [
+          "foundations",
+          "slabs"
+        ]
       }
     },
     "Concrete_30MPa": {
       "material_type": "elastic",
       "density": 2400.0,
       "elastic_modulus": 30000000000.0,
-      "poisson_ratio": 0.20,
+      "poisson_ratio": 0.2,
       "yield_stress": null,
       "unit_system": "si",
       "metadata": {
         "description": "Normal strength concrete",
         "compressive_strength": 30000000.0,
-        "applications": ["structural", "beams", "columns"]
+        "applications": [
+          "structural",
+          "beams",
+          "columns"
+        ]
       }
     },
     "Concrete_40MPa": {
       "material_type": "elastic",
       "density": 2400.0,
       "elastic_modulus": 35000000000.0,
-      "poisson_ratio": 0.20,
+      "poisson_ratio": 0.2,
       "yield_stress": null,
       "unit_system": "si",
       "metadata": {
         "description": "High-strength concrete",
         "compressive_strength": 40000000.0,
-        "applications": ["high-rise", "bridges"]
+        "applications": [
+          "high-rise",
+          "bridges"
+        ]
       }
     },
     "Concrete_60MPa": {
       "material_type": "elastic",
       "density": 2450.0,
       "elastic_modulus": 40000000000.0,
-      "poisson_ratio": 0.20,
+      "poisson_ratio": 0.2,
       "yield_stress": null,
       "unit_system": "si",
       "metadata": {
         "description": "Very high-strength concrete",
         "compressive_strength": 60000000.0,
-        "applications": ["special structures", "offshore"]
+        "applications": [
+          "special structures",
+          "offshore"
+        ]
+      }
+    },
+    "Concrete_50MPa": {
+      "material_type": "elastic",
+      "density": 2450.0,
+      "elastic_modulus": 37000000000.0,
+      "poisson_ratio": 0.2,
+      "yield_stress": null,
+      "unit_system": "si",
+      "metadata": {
+        "description": "High-strength concrete",
+        "compressive_strength": 50000000.0,
+        "applications": [
+          "high-rise",
+          "heavy infrastructure"
+        ]
+      }
+    },
+    "Concrete_80MPa_UHPC": {
+      "material_type": "elastic",
+      "density": 2500.0,
+      "elastic_modulus": 50000000000.0,
+      "poisson_ratio": 0.19,
+      "yield_stress": null,
+      "unit_system": "si",
+      "metadata": {
+        "description": "Ultra-high-performance concrete",
+        "compressive_strength": 80000000.0,
+        "applications": [
+          "bridges",
+          "special structures"
+        ],
+        "uhpc": true
+      }
+    },
+    "Lightweight_Concrete": {
+      "material_type": "elastic",
+      "density": 1850.0,
+      "elastic_modulus": 17000000000.0,
+      "poisson_ratio": 0.2,
+      "yield_stress": null,
+      "unit_system": "si",
+      "metadata": {
+        "description": "Lightweight aggregate concrete",
+        "compressive_strength": 25000000.0,
+        "applications": [
+          "non-structural",
+          "insulation"
+        ],
+        "lightweight": true
       }
     }
   },
@@ -955,7 +1509,10 @@
       "unit_system": "si",
       "metadata": {
         "description": "Aluminum oxide ceramic",
-        "applications": ["cutting tools", "wear parts"],
+        "applications": [
+          "cutting tools",
+          "wear parts"
+        ],
         "hardness_high": true,
         "brittle": true
       }
@@ -969,7 +1526,11 @@
       "unit_system": "si",
       "metadata": {
         "description": "Silicon carbide ceramic",
-        "applications": ["armor", "cutting tools", "semiconductors"],
+        "applications": [
+          "armor",
+          "cutting tools",
+          "semiconductors"
+        ],
         "hardness_high": true
       }
     },
@@ -982,8 +1543,47 @@
       "unit_system": "si",
       "metadata": {
         "description": "Zirconium oxide ceramic",
-        "applications": ["dental implants", "cutting tools"],
+        "applications": [
+          "dental implants",
+          "cutting tools"
+        ],
         "biocompatible": true
+      }
+    },
+    "Silicon_Nitride_Si3N4": {
+      "material_type": "elastic",
+      "density": 3200.0,
+      "elastic_modulus": 310000000000.0,
+      "poisson_ratio": 0.27,
+      "yield_stress": null,
+      "unit_system": "si",
+      "metadata": {
+        "description": "Silicon nitride ceramic",
+        "applications": [
+          "bearings",
+          "cutting tools",
+          "turbines"
+        ],
+        "high_temperature": true,
+        "wear_resistant": true
+      }
+    },
+    "Boron_Carbide_B4C": {
+      "material_type": "elastic",
+      "density": 2520.0,
+      "elastic_modulus": 450000000000.0,
+      "poisson_ratio": 0.21,
+      "yield_stress": null,
+      "unit_system": "si",
+      "metadata": {
+        "description": "Boron carbide (extremely hard)",
+        "applications": [
+          "armor",
+          "abrasives",
+          "nuclear"
+        ],
+        "hardness_high": true,
+        "third_hardest_material": true
       }
     }
   },
@@ -997,7 +1597,10 @@
       "unit_system": "si",
       "metadata": {
         "description": "Common soda-lime glass",
-        "applications": ["windows", "bottles"],
+        "applications": [
+          "windows",
+          "bottles"
+        ],
         "brittle": true
       }
     },
@@ -1005,12 +1608,15 @@
       "material_type": "elastic",
       "density": 2230.0,
       "elastic_modulus": 64000000000.0,
-      "poisson_ratio": 0.20,
+      "poisson_ratio": 0.2,
       "yield_stress": null,
       "unit_system": "si",
       "metadata": {
         "description": "Borosilicate glass (Pyrex)",
-        "applications": ["laboratory", "cookware"],
+        "applications": [
+          "laboratory",
+          "cookware"
+        ],
         "thermal_shock_resistant": true
       }
     }
@@ -1020,12 +1626,15 @@
       "material_type": "elastic",
       "density": 750.0,
       "elastic_modulus": 11000000000.0,
-      "poisson_ratio": 0.40,
+      "poisson_ratio": 0.4,
       "yield_stress": null,
       "unit_system": "si",
       "metadata": {
         "description": "Oak wood (along grain)",
-        "applications": ["furniture", "construction"],
+        "applications": [
+          "furniture",
+          "construction"
+        ],
         "anisotropic": true
       }
     },
@@ -1033,12 +1642,15 @@
       "material_type": "elastic",
       "density": 500.0,
       "elastic_modulus": 9000000000.0,
-      "poisson_ratio": 0.40,
+      "poisson_ratio": 0.4,
       "yield_stress": null,
       "unit_system": "si",
       "metadata": {
         "description": "Pine wood (along grain)",
-        "applications": ["construction", "furniture"],
+        "applications": [
+          "construction",
+          "furniture"
+        ],
         "anisotropic": true
       }
     },
@@ -1046,12 +1658,49 @@
       "material_type": "elastic",
       "density": 600.0,
       "elastic_modulus": 6000000000.0,
-      "poisson_ratio": 0.30,
+      "poisson_ratio": 0.3,
       "yield_stress": null,
       "unit_system": "si",
       "metadata": {
         "description": "Laminated plywood",
-        "applications": ["construction", "panels"]
+        "applications": [
+          "construction",
+          "panels"
+        ]
+      }
+    },
+    "Bamboo": {
+      "material_type": "elastic",
+      "density": 700.0,
+      "elastic_modulus": 15000000000.0,
+      "poisson_ratio": 0.35,
+      "yield_stress": null,
+      "unit_system": "si",
+      "metadata": {
+        "description": "Bamboo (along grain)",
+        "applications": [
+          "construction",
+          "furniture",
+          "sustainable"
+        ],
+        "sustainable": true,
+        "high_strength_to_weight": true
+      }
+    },
+    "Birch_Plywood": {
+      "material_type": "elastic",
+      "density": 680.0,
+      "elastic_modulus": 10000000000.0,
+      "poisson_ratio": 0.32,
+      "yield_stress": null,
+      "unit_system": "si",
+      "metadata": {
+        "description": "Birch plywood (high-quality)",
+        "applications": [
+          "furniture",
+          "cabinetry",
+          "structural"
+        ]
       }
     }
   },
@@ -1060,12 +1709,15 @@
       "material_type": "rigid",
       "density": 7850.0,
       "elastic_modulus": 200000000000.0,
-      "poisson_ratio": 0.30,
+      "poisson_ratio": 0.3,
       "yield_stress": null,
       "unit_system": "si",
       "metadata": {
         "description": "Rigid material for boundary conditions",
-        "applications": ["fixtures", "boundary conditions"]
+        "applications": [
+          "fixtures",
+          "boundary conditions"
+        ]
       }
     },
     "Lead": {
@@ -1075,11 +1727,14 @@
       "poisson_ratio": 0.44,
       "yield_stress": 12000000.0,
       "tangent_modulus": 500000000.0,
-      "failure_strain": 0.50,
+      "failure_strain": 0.5,
       "unit_system": "si",
       "metadata": {
         "description": "Lead metal",
-        "applications": ["radiation shielding", "weights"]
+        "applications": [
+          "radiation shielding",
+          "weights"
+        ]
       }
     },
     "Tungsten": {
@@ -1093,7 +1748,10 @@
       "unit_system": "si",
       "metadata": {
         "description": "Tungsten metal",
-        "applications": ["high-density", "high-temperature"],
+        "applications": [
+          "high-density",
+          "high-temperature"
+        ],
         "melting_point_c": 3422
       }
     },
@@ -1109,7 +1767,10 @@
       "metadata": {
         "description": "Magnesium alloy",
         "grade": "AZ31B",
-        "applications": ["automotive", "aerospace"],
+        "applications": [
+          "automotive",
+          "aerospace"
+        ],
         "lightweight": true
       }
     },
@@ -1120,12 +1781,118 @@
       "poisson_ratio": 0.33,
       "yield_stress": 280000000.0,
       "tangent_modulus": 1000000000.0,
-      "failure_strain": 0.10,
+      "failure_strain": 0.1,
       "unit_system": "si",
       "metadata": {
         "description": "Zinc die-casting alloy",
         "grade": "Zamak 3",
-        "applications": ["die casting", "automotive parts"]
+        "applications": [
+          "die casting",
+          "automotive parts"
+        ]
+      }
+    }
+  },
+  "magnesium_alloys": {
+    "Magnesium_AZ31B": {
+      "material_type": "elastic_plastic",
+      "density": 1770.0,
+      "elastic_modulus": 45000000000.0,
+      "poisson_ratio": 0.35,
+      "yield_stress": 220000000.0,
+      "tangent_modulus": 800000000.0,
+      "failure_strain": 0.15,
+      "unit_system": "si",
+      "metadata": {
+        "description": "Magnesium-aluminum-zinc alloy",
+        "grade": "AZ31B",
+        "applications": [
+          "automotive",
+          "aerospace",
+          "electronics"
+        ],
+        "lightweight": true
+      }
+    },
+    "Magnesium_AZ80A_T5": {
+      "material_type": "elastic_plastic",
+      "density": 1800.0,
+      "elastic_modulus": 45000000000.0,
+      "poisson_ratio": 0.35,
+      "yield_stress": 275000000.0,
+      "tangent_modulus": 1000000000.0,
+      "failure_strain": 0.11,
+      "unit_system": "si",
+      "metadata": {
+        "description": "High-strength magnesium alloy",
+        "grade": "AZ80A-T5",
+        "applications": [
+          "aerospace",
+          "automotive"
+        ],
+        "high_strength": true
+      }
+    },
+    "Magnesium_WE43": {
+      "material_type": "elastic_plastic",
+      "density": 1840.0,
+      "elastic_modulus": 44000000000.0,
+      "poisson_ratio": 0.27,
+      "yield_stress": 170000000.0,
+      "tangent_modulus": 700000000.0,
+      "failure_strain": 0.2,
+      "unit_system": "si",
+      "metadata": {
+        "description": "Rare-earth magnesium alloy",
+        "grade": "WE43",
+        "applications": [
+          "aerospace",
+          "medical implants"
+        ],
+        "biocompatible": true,
+        "high_temperature": true
+      }
+    }
+  },
+  "other_metals": {
+    "Cobalt_Chrome_CoCr": {
+      "material_type": "elastic_plastic",
+      "density": 8300.0,
+      "elastic_modulus": 210000000000.0,
+      "poisson_ratio": 0.3,
+      "yield_stress": 450000000.0,
+      "tangent_modulus": 2500000000.0,
+      "failure_strain": 0.2,
+      "unit_system": "si",
+      "metadata": {
+        "description": "Cobalt-chromium alloy",
+        "applications": [
+          "medical implants",
+          "dental",
+          "aerospace"
+        ],
+        "biocompatible": true,
+        "wear_resistant": true
+      }
+    },
+    "Nitinol_NiTi": {
+      "material_type": "elastic_plastic",
+      "density": 6450.0,
+      "elastic_modulus": 83000000000.0,
+      "poisson_ratio": 0.33,
+      "yield_stress": 195000000.0,
+      "tangent_modulus": 1000000000.0,
+      "failure_strain": 0.08,
+      "unit_system": "si",
+      "metadata": {
+        "description": "Nickel-titanium shape memory alloy",
+        "applications": [
+          "medical devices",
+          "actuators",
+          "aerospace"
+        ],
+        "shape_memory": true,
+        "superelastic": true
       }
     }
   }

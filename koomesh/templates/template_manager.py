@@ -638,6 +638,254 @@ class TemplateManager:
             tags=["compression", "consumer", "product"]
         ))
 
+        # Smartphone drop test
+        self.add_template(SimulationTemplate(
+            name="consumer_smartphone_drop",
+            category=TemplateCategory.CONSUMER,
+            analysis_type=AnalysisType.IMPACT,
+            description="Smartphone drop test (1.5m height)",
+            element_type="solid",
+            element_formulation="hex8",
+            target_element_size=1.5,
+            materials=["Glass_Soda_Lime", "Aluminum_6061_T6", "ABS_Plastic"],
+            solver_type="explicit",
+            analysis_duration=0.020,
+            timestep=5e-7,
+            tags=["smartphone", "drop", "consumer", "mobile"]
+        ))
+
+        # Helmet impact test
+        self.add_template(SimulationTemplate(
+            name="consumer_helmet_impact",
+            category=TemplateCategory.CONSUMER,
+            analysis_type=AnalysisType.IMPACT,
+            description="Helmet impact test (DOT/ECE standards)",
+            element_type="solid",
+            element_formulation="hex8",
+            target_element_size=3.0,
+            materials=["ABS_Plastic", "Polycarbonate_PC", "Foam_EPS_25"],
+            solver_type="explicit",
+            analysis_duration=0.015,
+            timestep=1e-6,
+            tags=["helmet", "impact", "safety", "consumer"]
+        ))
+
+        # Automotive foam compression
+        self.add_template(SimulationTemplate(
+            name="automotive_foam_compression",
+            category=TemplateCategory.AUTOMOTIVE,
+            analysis_type=AnalysisType.NONLINEAR,
+            description="Automotive foam seat compression analysis",
+            element_type="solid",
+            element_formulation="hex8",
+            target_element_size=8.0,
+            materials=["Foam_PU_Rigid_50", "Foam_PU_Rigid_100"],
+            solver_type="implicit",
+            tags=["foam", "compression", "seat", "automotive"]
+        ))
+
+        # Bumper impact
+        self.add_template(SimulationTemplate(
+            name="automotive_bumper_impact",
+            category=TemplateCategory.AUTOMOTIVE,
+            analysis_type=AnalysisType.IMPACT,
+            description="Low-speed bumper impact (FMVSS 581)",
+            element_type="solid",
+            element_formulation="hex8",
+            target_element_size=5.0,
+            materials=["PP_Polypropylene", "Steel_Mild_A36", "Foam_PU_Rigid_100"],
+            solver_type="explicit",
+            analysis_duration=0.100,
+            timestep=1e-6,
+            tags=["bumper", "impact", "automotive", "low-speed"]
+        ))
+
+        # Fuel tank sloshing
+        self.add_template(SimulationTemplate(
+            name="aerospace_fuel_tank_sloshing",
+            category=TemplateCategory.AEROSPACE,
+            analysis_type=AnalysisType.DYNAMIC,
+            description="Aircraft fuel tank sloshing analysis",
+            element_type="solid",
+            element_formulation="hex8",
+            target_element_size=20.0,
+            materials=["Aluminum_2024_T3", "Aluminum_7075_T6"],
+            solver_type="explicit",
+            analysis_duration=10.0,
+            timestep=1e-4,
+            tags=["fuel", "sloshing", "aerospace", "dynamics"]
+        ))
+
+        # Composite panel impact
+        self.add_template(SimulationTemplate(
+            name="aerospace_composite_impact",
+            category=TemplateCategory.AEROSPACE,
+            analysis_type=AnalysisType.IMPACT,
+            description="Composite panel low-velocity impact",
+            element_type="shell",
+            element_formulation="shell4",
+            target_element_size=5.0,
+            materials=["CarbonFiber_Epoxy_UD", "CarbonFiber_Epoxy_Woven"],
+            solver_type="explicit",
+            analysis_duration=0.010,
+            timestep=5e-7,
+            tags=["composite", "impact", "aerospace", "panel"]
+        ))
+
+        # Knee implant
+        self.add_template(SimulationTemplate(
+            name="biomedical_knee_implant",
+            category=TemplateCategory.BIOMEDICAL,
+            analysis_type=AnalysisType.STATIC,
+            description="Knee implant stress analysis under gait loading",
+            element_type="solid",
+            element_formulation="tet10",
+            target_element_size=2.0,
+            min_element_size=0.5,
+            materials=["Titanium_Ti6Al4V_ELI", "CoCrMo_Alloy", "PEEK"],
+            solver_type="implicit",
+            tags=["implant", "knee", "biomedical", "orthopedic"]
+        ))
+
+        # Spinal implant
+        self.add_template(SimulationTemplate(
+            name="biomedical_spinal_implant",
+            category=TemplateCategory.BIOMEDICAL,
+            analysis_type=AnalysisType.STATIC,
+            description="Spinal fusion implant stress analysis",
+            element_type="solid",
+            element_formulation="tet10",
+            target_element_size=1.5,
+            min_element_size=0.3,
+            materials=["Titanium_Ti6Al4V_ELI", "PEEK"],
+            solver_type="implicit",
+            tags=["implant", "spine", "biomedical", "orthopedic"]
+        ))
+
+        # Ship hull impact
+        self.add_template(SimulationTemplate(
+            name="marine_hull_impact",
+            category=TemplateCategory.MARINE,
+            analysis_type=AnalysisType.IMPACT,
+            description="Ship hull impact with floating object",
+            element_type="shell",
+            element_formulation="shell4",
+            target_element_size=50.0,
+            materials=["Steel_Mild_A36", "Steel_HSLA_50"],
+            solver_type="explicit",
+            analysis_duration=0.500,
+            timestep=1e-5,
+            tags=["ship", "hull", "impact", "marine"]
+        ))
+
+        # Wave loading
+        self.add_template(SimulationTemplate(
+            name="marine_wave_loading",
+            category=TemplateCategory.MARINE,
+            analysis_type=AnalysisType.DYNAMIC,
+            description="Marine structure wave loading analysis",
+            element_type="shell",
+            element_formulation="shell4",
+            target_element_size=100.0,
+            materials=["Steel_Mild_A36", "Stainless_316"],
+            solver_type="implicit",
+            analysis_duration=60.0,
+            timestep=0.1,
+            tags=["wave", "loading", "marine", "offshore"]
+        ))
+
+        # Solar panel structural
+        self.add_template(SimulationTemplate(
+            name="energy_solar_panel_structural",
+            category=TemplateCategory.ENERGY,
+            analysis_type=AnalysisType.STATIC,
+            description="Solar panel structural analysis under wind load",
+            element_type="shell",
+            element_formulation="shell4",
+            target_element_size=30.0,
+            materials=["Aluminum_6061_T6", "Glass_Soda_Lime"],
+            solver_type="implicit",
+            tags=["solar", "panel", "energy", "renewable"]
+        ))
+
+        # Battery cell impact
+        self.add_template(SimulationTemplate(
+            name="energy_battery_impact",
+            category=TemplateCategory.ENERGY,
+            analysis_type=AnalysisType.IMPACT,
+            description="Lithium-ion battery cell impact test",
+            element_type="solid",
+            element_formulation="hex8",
+            target_element_size=2.0,
+            materials=["Aluminum_6061_T6", "Copper_C11000", "Steel_Mild_A36"],
+            solver_type="explicit",
+            analysis_duration=0.010,
+            timestep=5e-7,
+            tags=["battery", "impact", "energy", "ev"]
+        ))
+
+        # Deep drawing
+        self.add_template(SimulationTemplate(
+            name="manufacturing_deep_drawing",
+            category=TemplateCategory.MANUFACTURING,
+            analysis_type=AnalysisType.NONLINEAR,
+            description="Sheet metal deep drawing simulation",
+            element_type="shell",
+            element_formulation="shell4",
+            target_element_size=3.0,
+            materials=["Steel_DP600", "Aluminum_6061_T6"],
+            solver_type="explicit",
+            analysis_duration=2.0,
+            friction_coefficient=0.12,
+            tags=["deep drawing", "forming", "manufacturing"]
+        ))
+
+        # Tube bending
+        self.add_template(SimulationTemplate(
+            name="manufacturing_tube_bending",
+            category=TemplateCategory.MANUFACTURING,
+            analysis_type=AnalysisType.NONLINEAR,
+            description="Tube bending process simulation",
+            element_type="shell",
+            element_formulation="shell4",
+            target_element_size=5.0,
+            materials=["Steel_Mild_A36", "Aluminum_6061_T6", "Stainless_304"],
+            solver_type="implicit",
+            tags=["bending", "tube", "manufacturing"]
+        ))
+
+        # Blast loading
+        self.add_template(SimulationTemplate(
+            name="construction_blast_loading",
+            category=TemplateCategory.CONSTRUCTION,
+            analysis_type=AnalysisType.DYNAMIC,
+            description="Building blast loading analysis",
+            element_type="shell",
+            element_formulation="shell4",
+            target_element_size=200.0,
+            materials=["Steel_Mild_A36", "Concrete_40MPa"],
+            solver_type="explicit",
+            analysis_duration=0.500,
+            timestep=1e-5,
+            tags=["blast", "explosion", "construction", "defense"]
+        ))
+
+        # Earthquake response
+        self.add_template(SimulationTemplate(
+            name="construction_earthquake_response",
+            category=TemplateCategory.CONSTRUCTION,
+            analysis_type=AnalysisType.DYNAMIC,
+            description="Building earthquake response (time-history)",
+            element_type="beam",
+            element_formulation="beam3d",
+            target_element_size=1000.0,
+            materials=["Steel_Mild_A36", "Concrete_40MPa"],
+            solver_type="implicit",
+            analysis_duration=40.0,
+            timestep=0.01,
+            tags=["earthquake", "seismic", "construction", "dynamic"]
+        ))
+
 
 # Module-level convenience functions
 _global_manager = None
