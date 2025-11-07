@@ -1,0 +1,56 @@
+# Simple Part Meshing Template
+# ==============================
+#
+# This is a minimal template for meshing a single part with default settings.
+# Good starting point for customization.
+#
+# Usage:
+#   koomesh run simple_part.yaml
+#   koomesh run simple_part.yaml --override input.step_files[0]=my_part.step
+
+project:
+  name: "simple_part"
+  description: "Basic single part meshing"
+  output_dir: "output/simple"
+
+input:
+  step_files:
+    - "input/part.step"
+  working_dir: "."
+
+meshing:
+  algorithm: "delaunay"
+  mesh_size: 2.0
+  element_type: "auto"
+  optimize: true
+
+quality:
+  enabled: true
+  thresholds:
+    aspect_ratio: 10.0
+    jacobian: 0.1
+    skewness: 0.8
+  checks:
+    - "aspect_ratio"
+    - "jacobian"
+    - "skewness"
+  report_format: "text"
+
+contact:
+  enabled: false
+
+materials:
+  assignments: {}
+
+output:
+  format: "lsdyna"
+  filename: "part.k"
+  include_contact: false
+  include_materials: false
+  separate_parts: false
+
+parallel:
+  enabled: false
+
+visualization:
+  enabled: false

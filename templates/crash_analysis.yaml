@@ -1,0 +1,82 @@
+# Crash Analysis Workflow Template
+# ==================================
+#
+# This template is optimized for vehicle crash simulations
+# with moderate mesh sizes and self-contact detection.
+#
+# Usage:
+#   koomesh run crash_analysis.yaml
+#   koomesh run crash_analysis.yaml --override meshing.mesh_size=1.5
+
+project:
+  name: "crash_analysis"
+  description: "Vehicle crash simulation meshing workflow"
+  output_dir: "output/crash"
+
+input:
+  step_files:
+    - "input/vehicle_body.step"
+    - "input/chassis.step"
+    - "input/bumper.step"
+  working_dir: "."
+
+meshing:
+  algorithm: "delaunay"
+  mesh_size: 2.0
+  element_type: "tet4"
+  optimize: true
+  boundary_layer:
+    enabled: false
+
+quality:
+  enabled: true
+  thresholds:
+    aspect_ratio: 5.0  # Relaxed for crash (high deformation)
+    jacobian: 0.2
+    skewness: 0.7
+  checks:
+    - "aspect_ratio"
+    - "jacobian"
+    - "skewness"
+  report_format: "html"
+  report_file: "quality_report.html"
+
+contact:
+  enabled: true
+  auto_detect: true
+  tolerance: 0.2  # Larger tolerance for crash
+  self_contact: true
+  min_angle: 120.0
+  export_format: "lsdyna"
+
+materials:
+  library: "materials/automotive.json"
+  assignments:
+    vehicle_body: "Steel_HighStrength"
+    chassis: "Steel_Mild"
+    bumper: "Aluminum_6061_T6"
+  export_cards: true
+
+output:
+  format: "lsdyna"
+  filename: "crash_model.k"
+  include_contact: true
+  include_materials: true
+  separate_parts: false
+
+parallel:
+  enabled: true
+  n_jobs: -1  # Use all available cores
+  batch_size: 100
+
+visualization:
+  enabled: true
+  screenshots:
+    - metric: "aspect_ratio"
+      filename: "quality_aspect_ratio.png"
+      view: "isometric"
+      window_size: [1920, 1080]
+    - metric: "jacobian"
+      filename: "quality_jacobian.png"
+      view: "isometric"
+      window_size: [1920, 1080]

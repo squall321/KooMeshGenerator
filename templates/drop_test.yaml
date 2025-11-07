@@ -1,0 +1,74 @@
+# Drop Test Simulation Template
+# ===============================
+#
+# This template is optimized for drop test simulations
+# with focus on impact zones and contact with ground.
+#
+# Usage:
+#   koomesh run drop_test.yaml
+
+project:
+  name: "drop_test"
+  description: "Drop test simulation meshing workflow"
+  output_dir: "output/drop_test"
+
+input:
+  step_files:
+    - "input/product.step"
+    - "input/packaging.step"
+  working_dir: "."
+
+meshing:
+  algorithm: "delaunay"
+  mesh_size: 2.5
+  element_type: "tet4"
+  optimize: true
+  boundary_layer:
+    enabled: false
+
+quality:
+  enabled: true
+  thresholds:
+    aspect_ratio: 6.0
+    jacobian: 0.2
+    skewness: 0.7
+  checks:
+    - "aspect_ratio"
+    - "jacobian"
+  report_format: "json"
+  report_file: "quality_report.json"
+
+contact:
+  enabled: true
+  auto_detect: true
+  tolerance: 0.15
+  self_contact: true
+  min_angle: 120.0
+  export_format: "lsdyna"
+
+materials:
+  library: "materials/general.json"
+  assignments:
+    product: "Plastic_ABS"
+    packaging: "Foam_EPS"
+  export_cards: true
+
+output:
+  format: "lsdyna"
+  filename: "drop_test.k"
+  include_contact: true
+  include_materials: true
+  separate_parts: false
+
+parallel:
+  enabled: false  # Small model, parallel overhead not worth it
+  n_jobs: 1
+  batch_size: 100
+
+visualization:
+  enabled: true
+  screenshots:
+    - metric: "aspect_ratio"
+      filename: "quality.png"
+      view: "isometric"
+      window_size: [1280, 720]

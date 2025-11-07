@@ -410,21 +410,23 @@ def version():
     click.echo(f"Author: {koomesh.__author__}")
 
 
-# Register Phase 2 CLI commands
+# Register Phase 2 & 3 CLI commands
 try:
+    from koomesh.cli.commands.run import run
     from koomesh.cli.commands.quality import quality
     from koomesh.cli.commands.contact import contact
     from koomesh.cli.commands.material import material
     from koomesh.cli.commands.visualize import visualize
 
+    cli.add_command(run)
     cli.add_command(quality)
     cli.add_command(contact)
     cli.add_command(material)
     cli.add_command(visualize)
 except ImportError as e:
-    # Phase 2 commands are optional - may not be available in minimal installations
+    # Phase 2/3 commands are optional - may not be available in minimal installations
     logger = logging.getLogger(__name__)
-    logger.warning(f"Phase 2 CLI commands not available: {e}")
+    logger.warning(f"Phase 2/3 CLI commands not available: {e}")
 
 
 if __name__ == '__main__':
