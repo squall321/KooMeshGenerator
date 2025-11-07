@@ -5,6 +5,19 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Python 3.9+](https://img.shields.io/badge/python-3.9+-blue.svg)](https://www.python.org/downloads/)
 
+---
+
+## 🚀 Next Session? Start Here!
+
+**For continuing development**: See **[START_HERE.md](START_HERE.md)** for quick start guide
+
+**Current Status**:
+- ✅ Day 1 Complete (Pipeline Foundation)
+- ⏳ Day 2 Next (Geometry Processing)
+- 📄 Full details: [SESSION_SUMMARY.md](SESSION_SUMMARY.md)
+
+---
+
 ## Overview
 
 KooMeshGenerator is a comprehensive tool for automatic mesh generation from STEP files with intelligent geometry analysis. It automatically determines the optimal mesh type (hexahedral or tetrahedral) based on geometry classification and outputs LS-DYNA keyword format.
