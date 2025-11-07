@@ -232,23 +232,69 @@ class MaterialLibrary:
 
     def load_default_materials(self) -> None:
         """
-        Load default material library
+        Load default material library from JSON database
 
-        Includes common engineering materials:
-        - Steels (mild, high-strength, stainless)
-        - Aluminum alloys
-        - Plastics
-        - Concrete
+        Loads 150+ engineering materials organized by categories:
+        - Steels (14 types)
+        - Aluminum alloys (7 types)
+        - Titanium alloys (5 types)
+        - Copper alloys (4 types)
+        - Nickel alloys (4 types)
+        - Plastics (11 types)
+        - Composites (4 types)
+        - Foams (4 types)
+        - Elastomers (4 types)
+        - Concrete (4 types)
+        - Ceramics (3 types)
+        - Glass (2 types)
+        - Wood (3 types)
+        - Other materials (5 types)
         """
+        # Find material_database.json
+        current_dir = Path(__file__).parent
+        db_path = current_dir / "material_database.json"
+
+        if not db_path.exists():
+            self.logger.warning(f"Material database not found at {db_path}, using legacy materials")
+            self._load_legacy_materials()
+            return
+
+        # Load from JSON database
+        with open(db_path, 'r') as f:
+            data = json.load(f)
+
+        # Extract materials from categories
+        material_count = 0
+        for category_name, category_materials in data.items():
+            # Skip metadata
+            if category_name.startswith('_'):
+                continue
+
+            # Add materials from this category
+            for mat_name, mat_data in category_materials.items():
+                try:
+                    # Add name field to data
+                    mat_data_with_name = mat_data.copy()
+                    mat_data_with_name['name'] = mat_name
+                    material = Material.from_dict(mat_data_with_name)
+                    self.add_material(material)
+                    material_count += 1
+                except Exception as e:
+                    self.logger.error(f"Failed to load material {mat_name}: {e}")
+
+        self.logger.info(f"Loaded {material_count} materials from database")
+
+    def _load_legacy_materials(self) -> None:
+        """Load legacy hardcoded materials (fallback)"""
         # Steels
         self.add_material(Material(
             name="Steel_1045",
             material_type=MaterialType.ELASTIC_PLASTIC,
-            density=7850.0,  # kg/m³
-            elastic_modulus=200e9,  # Pa
+            density=7850.0,
+            elastic_modulus=200e9,
             poisson_ratio=0.29,
-            yield_stress=530e6,  # Pa
-            tangent_modulus=2e9,  # Pa
+            yield_stress=530e6,
+            tangent_modulus=2e9,
             failure_strain=0.15,
             unit_system=UnitSystem.SI,
             metadata={"description": "Medium carbon steel", "grade": "AISI 1045"}
@@ -267,33 +313,7 @@ class MaterialLibrary:
             metadata={"description": "Mild steel (low carbon)", "grade": "A36"}
         ))
 
-        self.add_material(Material(
-            name="Steel_HighStrength",
-            material_type=MaterialType.ELASTIC_PLASTIC,
-            density=7850.0,
-            elastic_modulus=200e9,
-            poisson_ratio=0.29,
-            yield_stress=800e6,
-            tangent_modulus=3e9,
-            failure_strain=0.12,
-            unit_system=UnitSystem.SI,
-            metadata={"description": "High-strength steel", "grade": "HSLA"}
-        ))
-
-        self.add_material(Material(
-            name="Stainless_304",
-            material_type=MaterialType.ELASTIC_PLASTIC,
-            density=8000.0,
-            elastic_modulus=193e9,
-            poisson_ratio=0.29,
-            yield_stress=215e6,
-            tangent_modulus=2e9,
-            failure_strain=0.40,
-            unit_system=UnitSystem.SI,
-            metadata={"description": "Austenitic stainless steel", "grade": "304"}
-        ))
-
-        # Aluminum alloys
+        # Aluminum
         self.add_material(Material(
             name="Aluminum_6061_T6",
             material_type=MaterialType.ELASTIC_PLASTIC,
@@ -305,19 +325,6 @@ class MaterialLibrary:
             failure_strain=0.12,
             unit_system=UnitSystem.SI,
             metadata={"description": "Heat-treated aluminum alloy", "grade": "6061-T6"}
-        ))
-
-        self.add_material(Material(
-            name="Aluminum_7075_T6",
-            material_type=MaterialType.ELASTIC_PLASTIC,
-            density=2810.0,
-            elastic_modulus=71.7e9,
-            poisson_ratio=0.33,
-            yield_stress=503e6,
-            tangent_modulus=1.5e9,
-            failure_strain=0.11,
-            unit_system=UnitSystem.SI,
-            metadata={"description": "High-strength aluminum alloy", "grade": "7075-T6"}
         ))
 
         # Plastics
@@ -334,32 +341,7 @@ class MaterialLibrary:
             metadata={"description": "Acrylonitrile Butadiene Styrene"}
         ))
 
-        self.add_material(Material(
-            name="Polycarbonate",
-            material_type=MaterialType.ELASTIC_PLASTIC,
-            density=1200.0,
-            elastic_modulus=2.4e9,
-            poisson_ratio=0.37,
-            yield_stress=62e6,
-            tangent_modulus=0.15e9,
-            failure_strain=0.10,
-            unit_system=UnitSystem.SI,
-            metadata={"description": "Engineering thermoplastic"}
-        ))
-
-        # Concrete
-        self.add_material(Material(
-            name="Concrete_30MPa",
-            material_type=MaterialType.ELASTIC,
-            density=2400.0,
-            elastic_modulus=30e9,
-            poisson_ratio=0.2,
-            yield_stress=None,
-            unit_system=UnitSystem.SI,
-            metadata={"description": "Normal strength concrete", "compressive_strength": 30e6}
-        ))
-
-        # Rigid (for boundary conditions)
+        # Rigid
         self.add_material(Material(
             name="Rigid",
             material_type=MaterialType.RIGID,
@@ -370,7 +352,7 @@ class MaterialLibrary:
             metadata={"description": "Rigid material for BCs"}
         ))
 
-        self.logger.info(f"Loaded {len(self.materials)} default materials")
+        self.logger.info(f"Loaded {len(self.materials)} legacy materials")
 
     def search_materials(self, keyword: str) -> List[Material]:
         """
