@@ -41,6 +41,26 @@ class ContactPair:
     avg_distance: float
 
 
+@dataclass
+class SelfContactPair:
+    """
+    Represents self-contact within a single part
+
+    Self-contact occurs when different regions of the same part
+    come into close proximity (e.g., during large deformations).
+
+    Attributes:
+        part_id: Part ID
+        face_pairs: List of (face_idx1, face_idx2) tuples that are in contact
+        avg_distance: Average distance between contacting face pairs
+        min_distance: Minimum distance found
+    """
+    part_id: int
+    face_pairs: List[Tuple[int, int]]
+    avg_distance: float
+    min_distance: float
+
+
 class ContactSurfaceDetector:
     """
     Detect contact surfaces between mesh parts
@@ -284,6 +304,169 @@ class ContactSurfaceDetector:
                 f.write("$\n")
 
         self.logger.info(f"Exported LS-DYNA contact definitions")
+
+    def detect_self_contacts(self, mesh: MeshData,
+                             tolerance: float = 0.1,
+                             min_angle: float = 120.0,
+                             part_id: int = None) -> List[SelfContactPair]:
+        """
+        Detect self-contact within a part
+
+        Self-contact occurs when different regions of the same part are in
+        close proximity with opposing normals (e.g., folding, crushing).
+
+        Args:
+            mesh: Mesh to analyze
+            tolerance: Maximum distance to consider as potential contact
+            min_angle: Minimum angle (degrees) between face normals to consider
+                      as potential contact (180° = exactly opposite)
+            part_id: Specific part ID to analyze (None = analyze all parts)
+
+        Returns:
+            List of SelfContactPair objects
+
+        Example:
+            >>> detector = ContactSurfaceDetector()
+            >>> self_contacts = detector.detect_self_contacts(mesh, tolerance=0.5)
+            >>> for sc in self_contacts:
+            ...     print(f"Part {sc.part_id}: {len(sc.face_pairs)} self-contact pairs")
+        """
+        self.logger.info(f"Detecting self-contacts (tolerance={tolerance}, min_angle={min_angle}°)...")
+
+        # Get parts to analyze
+        if part_id is not None:
+            part_ids = [part_id]
+        else:
+            part_ids = list(set(elem.part_id for elem in mesh.elements.values()))
+
+        self.logger.debug(f"Analyzing {len(part_ids)} parts for self-contact")
+
+        # Get surface faces for each part
+        part_faces_dict = self._extract_surface_faces(mesh)
+
+        self_contact_pairs = []
+
+        for pid in part_ids:
+            if pid not in part_faces_dict:
+                continue
+
+            faces = part_faces_dict[pid]
+            self.logger.debug(f"Part {pid}: {len(faces)} surface faces")
+
+            if len(faces) < 2:
+                continue
+
+            # Find self-contacting face pairs
+            face_pairs, distances = self._find_self_contact_faces(
+                mesh, faces, tolerance, min_angle
+            )
+
+            if face_pairs:
+                avg_dist = np.mean(distances)
+                min_dist = np.min(distances)
+
+                self_contact = SelfContactPair(
+                    part_id=pid,
+                    face_pairs=face_pairs,
+                    avg_distance=avg_dist,
+                    min_distance=min_dist
+                )
+                self_contact_pairs.append(self_contact)
+
+                self.logger.info(
+                    f"Part {pid}: {len(face_pairs)} self-contact pairs, "
+                    f"avg dist={avg_dist:.3f}, min dist={min_dist:.3f}"
+                )
+
+        self.logger.info(f"Detected self-contact in {len(self_contact_pairs)} parts")
+        return self_contact_pairs
+
+    def _find_self_contact_faces(self, mesh: MeshData,
+                                 faces: List[Tuple],
+                                 tolerance: float,
+                                 min_angle: float) -> Tuple[List[Tuple[int, int]], List[float]]:
+        """
+        Find self-contacting face pairs within a set of faces
+
+        Args:
+            mesh: Mesh data
+            faces: List of face tuples (elem_id, face_idx, node_ids)
+            tolerance: Distance tolerance
+            min_angle: Minimum angle between normals (degrees)
+
+        Returns:
+            Tuple of (face_pairs, distances)
+            face_pairs: List of (face_idx1, face_idx2) tuples
+            distances: Corresponding distances
+        """
+        from scipy.spatial import KDTree
+
+        # Compute face centers and normals
+        face_centers = []
+        face_normals = []
+
+        for elem_id, face_idx, node_ids in faces:
+            # Get face center
+            coords = np.array([
+                [mesh.nodes[nid].x, mesh.nodes[nid].y, mesh.nodes[nid].z]
+                for nid in node_ids
+            ])
+            center = np.mean(coords, axis=0)
+            face_centers.append(center)
+
+            # Compute face normal (for triangular or quad faces)
+            if len(node_ids) >= 3:
+                v1 = coords[1] - coords[0]
+                v2 = coords[2] - coords[0]
+                normal = np.cross(v1, v2)
+                norm_length = np.linalg.norm(normal)
+                if norm_length > 1e-10:
+                    normal = normal / norm_length
+                else:
+                    normal = np.array([0, 0, 1])  # Default normal
+            else:
+                normal = np.array([0, 0, 1])
+
+            face_normals.append(normal)
+
+        face_centers = np.array(face_centers)
+        face_normals = np.array(face_normals)
+
+        # Build KD-tree for efficient spatial queries
+        kdtree = KDTree(face_centers)
+
+        # Find face pairs within tolerance
+        face_pairs = []
+        distances = []
+
+        # Convert min_angle to radians
+        min_angle_rad = np.radians(min_angle)
+
+        # For each face, find nearby faces
+        for i in range(len(faces)):
+            # Query faces within tolerance
+            indices = kdtree.query_ball_point(face_centers[i], tolerance)
+
+            for j in indices:
+                # Skip self and already processed pairs
+                if j <= i:
+                    continue
+
+                # Check distance
+                dist = np.linalg.norm(face_centers[i] - face_centers[j])
+
+                if dist < tolerance:
+                    # Check if normals are opposing
+                    # Dot product close to -1 means opposite directions
+                    dot_product = np.dot(face_normals[i], face_normals[j])
+                    angle = np.arccos(np.clip(dot_product, -1.0, 1.0))
+
+                    # If angle >= min_angle, faces are approaching/opposing
+                    if angle >= min_angle_rad:
+                        face_pairs.append((i, j))
+                        distances.append(dist)
+
+        return face_pairs, distances
 
 
 def detect_and_report_contacts(mesh: MeshData,
