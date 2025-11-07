@@ -93,14 +93,22 @@ See [build/README.md](build/README.md) for detailed instructions on building Pyt
 
 ```bash
 # Generate mesh from STEP file
-koomesh generate input.step --mesh-size 1.0
+koomesh generate input.step --mesh-size 2.0 -o output.k
 
-# Analyze STEP structure without meshing
-koomesh analyze input.step
+# Analyze geometry
+koomesh geometry info input.step
 
-# Validate LS-DYNA output file
-koomesh validate output.k
+# Check mesh quality
+koomesh quality check output.k --report html
+
+# Batch process multiple files
+koomesh batch-convert "cad/*.step" --output-dir meshes/ --mesh-size 2.0
+
+# Run workflow from config
+koomesh run workflow.yaml
 ```
+
+See [CLI Usage Guide](docs/CLI_GUIDE.md) for complete documentation.
 
 ### Python API
 
@@ -115,6 +123,53 @@ output_file = pipeline.run('model.step', mesh_size=0.5)
 
 print(f"Mesh generated: {output_file}")
 ```
+
+## CLI Features
+
+KooMeshGenerator provides a comprehensive command-line interface with the following capabilities:
+
+### Core Commands
+
+- **`koomesh generate`** - Generate mesh from STEP file with automatic geometry analysis
+- **`koomesh analyze`** - Analyze STEP file structure and geometry
+- **`koomesh batch`** - Batch process multiple files in parallel
+
+### New CLI Features (Phase 3)
+
+- **`koomesh run`** - Execute complete workflows from YAML configuration files
+- **`koomesh batch-convert`** - Batch convert using glob patterns
+- **`koomesh batch-mesh`** - Batch process from CSV/Excel with custom parameters
+- **`koomesh geometry`** - Geometry preprocessing tools (info, clean, compare, simplify)
+- **`koomesh quality`** - Mesh quality checking and reporting
+- **`koomesh contact`** - Contact zone detection and export
+- **`koomesh material`** - Material library management
+- **`koomesh visualize`** - Mesh visualization and screenshots
+
+### Quick Examples
+
+```bash
+# Configuration-based workflow
+koomesh run crash_analysis.yaml --override meshing.mesh_size=1.5
+
+# Clean problematic geometry
+koomesh geometry clean input.step --output cleaned.step --heal-surfaces
+
+# Batch process with parameters
+koomesh batch-mesh parts_list.csv --parallel --jobs 8
+
+# Quality check with HTML report
+koomesh quality check mesh.k --report html -o report.html
+
+# Detect contacts
+koomesh contact detect assembly.k --tolerance 0.1 --export lsdyna
+```
+
+### Documentation & Examples
+
+- **[Complete CLI Guide](docs/CLI_GUIDE.md)** - Comprehensive command reference
+- **[Example Workflows](examples/workflows/)** - Ready-to-use workflow scripts
+- **[Batch Processing Guide](examples/batch/README.md)** - Batch processing examples
+- **[Configuration Templates](templates/)** - YAML config templates for common scenarios
 
 ## Usage
 
