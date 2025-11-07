@@ -1,0 +1,75 @@
+name: Build Apptainer Container
+
+on:
+  push:
+    branches: [ main, develop ]
+    tags:
+      - 'v*'
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  build-apptainer:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Set up Apptainer
+      uses: eWaterCycle/setup-apptainer@v2
+      with:
+        apptainer-version: 1.2.5
+
+    - name: Verify Apptainer installation
+      run: |
+        apptainer --version
+
+    - name: Build Apptainer container
+      run: |
+        cd apptainer
+        ./build.sh
+      timeout-minutes: 60
+
+    - name: Test container
+      run: |
+        cd apptainer
+        ./test.sh
+      timeout-minutes: 10
+
+    - name: Test CLI commands in container
+      run: |
+        apptainer exec apptainer/koomesh.sif python3 -m koomesh.cli.main --version
+        apptainer exec apptainer/koomesh.sif python3 -m koomesh.cli.main info
+        apptainer exec apptainer/koomesh.sif python3 -m koomesh.cli.main --help
+
+    - name: Upload container artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: koomesh-sif
+        path: apptainer/koomesh.sif
+        retention-days: 30
+
+    - name: Create Release (on tag)
+      if: startsWith(github.ref, 'refs/tags/v')
+      uses: softprops/action-gh-release@v1
+      with:
+        files: apptainer/koomesh.sif
+        body: |
+          ## KooMeshGenerator Apptainer Container
+
+          Download and use:
+          ```bash
+          # Download container
+          wget https://github.com/${{ github.repository }}/releases/download/${{ github.ref_name }}/koomesh.sif
+
+          # Run mesh generation
+          apptainer run koomesh.sif generate model.step --mesh-size 2.0 -o output.k
+
+          # Check system info
+          apptainer exec koomesh.sif python3 -m koomesh.cli.main info
+          ```
+        draft: false
+        prerelease: false
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
