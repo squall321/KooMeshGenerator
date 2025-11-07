@@ -138,6 +138,9 @@ stl_export_examples/
 elmer_examples/
 ply_obj_examples/
 
+# Test output directory
+output/
+
 # Temporary files
 *.tmp
 *.bak
