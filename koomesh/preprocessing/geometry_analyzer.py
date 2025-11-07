@@ -19,7 +19,16 @@ from dataclasses import dataclass
 from typing import Dict, Any, Optional, List
 from pathlib import Path
 
-logger = logging.getLogger(__name__)
+from koomesh.utils.exceptions import (
+    FileNotFoundError as KooMeshFileNotFoundError,
+    FileReadError,
+    GeometryLoadError,
+    InvalidGeometryError,
+    DependencyError,
+)
+from koomesh.utils.logger import get_logger
+
+logger = get_logger(__name__)
 
 
 @dataclass
@@ -116,11 +125,12 @@ class GeometryAnalyzer:
 
         Raises:
             FileNotFoundError: If STEP file doesn't exist
-            RuntimeError: If PythonOCC is not available
+            GeometryLoadError: If STEP file cannot be loaded
+            DependencyError: If PythonOCC is not available
         """
         filepath = Path(step_file)
         if not filepath.exists():
-            raise FileNotFoundError(f"STEP file not found: {step_file}")
+            raise KooMeshFileNotFoundError(filepath)
 
         self.logger.info(f"Analyzing geometry: {step_file}")
 
@@ -134,21 +144,26 @@ class GeometryAnalyzer:
             from OCC.Core.Bnd import Bnd_Box
             from OCC.Core.BRepBndLib import brepbndlib_Add
             from OCC.Core.BRepCheck import BRepCheck_Analyzer
-        except ImportError:
-            raise RuntimeError(
-                "PythonOCC is required for geometry analysis. "
-                "Please install PythonOCC first."
-            )
+        except ImportError as e:
+            raise DependencyError(
+                "PythonOCC",
+                reason="Required for geometry analysis"
+            ) from e
 
         # Read STEP file
-        reader = STEPControl_Reader()
-        status = reader.ReadFile(str(filepath))
+        try:
+            reader = STEPControl_Reader()
+            status = reader.ReadFile(str(filepath))
 
-        if status != 1:  # IFSelect_RetDone
-            raise RuntimeError(f"Failed to read STEP file: {step_file}")
+            if status != 1:  # IFSelect_RetDone
+                raise GeometryLoadError(filepath, reason="STEP file read failed")
 
-        reader.TransferRoots()
-        shape = reader.OneShape()
+            reader.TransferRoots()
+            shape = reader.OneShape()
+        except Exception as e:
+            if isinstance(e, (GeometryLoadError, DependencyError)):
+                raise
+            raise GeometryLoadError(filepath, reason=str(e)) from e
 
         # Initialize result
         info = GeometryInfo(filename=str(filepath))
