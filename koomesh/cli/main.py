@@ -413,12 +413,16 @@ def version():
 # Register Phase 2 & 3 CLI commands
 try:
     from koomesh.cli.commands.run import run
+    from koomesh.cli.commands.batch_convert import batch_convert
+    from koomesh.cli.commands.batch_mesh import batch_mesh
     from koomesh.cli.commands.quality import quality
     from koomesh.cli.commands.contact import contact
     from koomesh.cli.commands.material import material
     from koomesh.cli.commands.visualize import visualize
 
     cli.add_command(run)
+    cli.add_command(batch_convert)
+    cli.add_command(batch_mesh)
     cli.add_command(quality)
     cli.add_command(contact)
     cli.add_command(material)

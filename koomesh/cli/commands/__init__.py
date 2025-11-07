@@ -6,6 +6,8 @@ This package contains command modules for the KooMeshGenerator CLI.
 
 Available Commands:
 - run: Execute workflow from configuration file
+- batch-convert: Batch convert files using glob patterns
+- batch-mesh: Batch mesh from CSV/Excel parameters
 - quality: Mesh quality checking and reporting
 - contact: Contact detection and export
 - material: Material library management
@@ -15,9 +17,11 @@ Author: KooMeshGenerator Team
 """
 
 from .run import run
+from .batch_convert import batch_convert
+from .batch_mesh import batch_mesh
 from .quality import quality
 from .contact import contact
 from .material import material
 from .visualize import visualize
 
-__all__ = ['run', 'quality', 'contact', 'material', 'visualize']
+__all__ = ['run', 'batch_convert', 'batch_mesh', 'quality', 'contact', 'material', 'visualize']

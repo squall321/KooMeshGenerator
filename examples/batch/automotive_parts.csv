@@ -1,0 +1,9 @@
+id,input_file,output_file,mesh_size,element_type,material,quality_threshold
+body_01,cad/body_front.step,meshes/body_front.k,2.0,tet4,Steel_HighStrength,5.0
+body_02,cad/body_rear.step,meshes/body_rear.k,2.0,tet4,Steel_HighStrength,5.0
+chassis_01,cad/chassis.step,meshes/chassis.k,2.5,tet4,Steel_Mild,6.0
+bumper_front,cad/bumper_front.step,meshes/bumper_front.k,1.5,tet4,Aluminum_6061_T6,4.0
+bumper_rear,cad/bumper_rear.step,meshes/bumper_rear.k,1.5,tet4,Aluminum_6061_T6,4.0
+door_left,cad/door_left.step,meshes/door_left.k,2.0,tet4,Steel_Mild,5.0
+door_right,cad/door_right.step,meshes/door_right.k,2.0,tet4,Steel_Mild,5.0
+hood,cad/hood.step,meshes/hood.k,2.0,tet4,Aluminum_6061_T6,5.0
