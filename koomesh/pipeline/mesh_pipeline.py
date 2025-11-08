@@ -780,27 +780,35 @@ class MeshGenerationPipeline:
 
     def _validate_output(self) -> Dict[str, Any]:
         """
-        Stage 6: Validate output
+        Stage 6: Validate output using LSDynaValidator
+
+        Performs comprehensive validation:
+        - Keyword syntax and format
+        - Node and element definitions
+        - Contact definitions
+        - Material assignments
+        - ID consistency
 
         Returns:
             Dictionary with validation results and warnings
 
         Raises:
-            Exception: If validation fails
+            Exception: If validation fails critically
         """
         self.progress.start_stage("validation", "Validating K file...")
 
         try:
             from pathlib import Path
+            from koomesh.validation.lsdyna_validator import LSDynaValidator
 
             # Update progress
             self.progress.update_stage(
                 "validation",
-                0.3,
+                0.2,
                 "Checking output file..."
             )
 
-            # Basic validation: check if file exists
+            # Quick check: file exists
             output_path = Path(self.config.output_file)
             if not output_path.exists():
                 self.logger.warning(f"Output file not found: {self.config.output_file}")
@@ -825,44 +833,78 @@ class MeshGenerationPipeline:
             # Update progress
             self.progress.update_stage(
                 "validation",
-                0.7,
-                f"Validating {file_size} byte file..."
+                0.4,
+                "Running comprehensive validation..."
             )
 
-            # Note: Full K file validation will be implemented in Week 2 (Day 11-13)
-            # For now, we just check basic properties
-            warnings = []
+            # Run full validation using LSDynaValidator
+            validator = LSDynaValidator(strict_mode=False)
 
-            # Basic syntax check (first line should be a comment or keyword)
             try:
-                with open(self.config.output_file, 'r') as f:
-                    first_line = f.readline().strip()
-                    if not (first_line.startswith('$') or first_line.startswith('*')):
-                        warnings.append("File may not be valid LS-DYNA format")
+                validation_result = validator.validate(self.config.output_file)
             except Exception as e:
-                warnings.append(f"Could not read file: {e}")
+                self.logger.error(f"Validator crashed: {str(e)}")
+                self.progress.fail_stage("validation", f"Validator error: {str(e)}")
+                return {
+                    'success': False,
+                    'errors': [f"Validator crashed: {str(e)}"],
+                    'warnings': []
+                }
+
+            # Update progress
+            self.progress.update_stage(
+                "validation",
+                0.8,
+                f"Processing validation results..."
+            )
+
+            # Extract errors and warnings
+            errors = [str(msg) for msg in validation_result.errors]
+            warnings = [str(msg) for msg in validation_result.warnings]
+
+            # Log summary
+            if validation_result.success:
+                self.logger.info(
+                    f"Validation passed: {len(errors)} errors, {len(warnings)} warnings"
+                )
+            else:
+                self.logger.warning(
+                    f"Validation failed: {len(errors)} errors, {len(warnings)} warnings"
+                )
+
+            # Log first few errors/warnings
+            for error in errors[:5]:
+                self.logger.error(f"  {error}")
+            if len(errors) > 5:
+                self.logger.error(f"  ... and {len(errors) - 5} more errors")
+
+            for warning in warnings[:5]:
+                self.logger.warning(f"  {warning}")
+            if len(warnings) > 5:
+                self.logger.warning(f"  ... and {len(warnings) - 5} more warnings")
 
             # Complete stage
-            self.progress.complete_stage(
-                "validation",
-                f"Basic validation complete ({len(warnings)} warning(s))"
+            status_msg = (
+                f"Validation complete: {len(errors)} error(s), "
+                f"{len(warnings)} warning(s)"
             )
+            if validation_result.success:
+                self.progress.complete_stage("validation", status_msg)
+            else:
+                self.progress.fail_stage("validation", status_msg)
 
-            self.logger.info(
-                f"Validation complete: {self.config.output_file} "
-                f"({file_size} bytes)"
-            )
-
+            # Return result dictionary
             return {
-                'success': True,
-                'errors': [],
+                'success': validation_result.success,
+                'errors': errors,
                 'warnings': warnings,
                 'file_size': file_size,
-                'note': 'Full validation will be implemented in Week 2'
+                'statistics': validation_result.statistics,
+                'validator_result': validation_result  # Full result object
             }
 
         except Exception as e:
-            error_msg = f"Validation failed: {str(e)}"
+            error_msg = f"Validation stage failed: {str(e)}"
             self.logger.error(error_msg)
             self.progress.fail_stage("validation", error_msg)
             return {
