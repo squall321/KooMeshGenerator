@@ -48,14 +48,21 @@ From: ubuntu:22.04
         vim \
         && rm -rf /var/lib/apt/lists/*
 
-    # Install Python packages
+    # Install Python packages (Phase 3 & 4 dependencies)
     pip3 install --no-cache-dir \
         numpy \
         scipy \
         pytest \
+        pytest-cov \
         click \
         pyyaml \
+        "pydantic>=2.0" \
+        pandas \
+        openpyxl \
+        joblib \
+        tqdm \
         psutil \
+        pyvista \
         gmsh \
         cadquery \
         cadquery-ocp
@@ -84,10 +91,17 @@ From: ubuntu:22.04
     python3 -c "import scipy; print('SciPy OK')"
     python3 -c "import gmsh; print('GMSH OK')"
     python3 -c "import cadquery; print('CadQuery OK')"
+    python3 -c "import pydantic; print('Pydantic OK')"
+    python3 -c "import pandas; print('Pandas OK')"
+    python3 -c "import joblib; print('Joblib OK')"
+    python3 -c "import tqdm; print('Tqdm OK')"
+    python3 -c "import pyvista; print('PyVista OK')"
 
     # Test KooMesh imports
     cd /opt/KooMeshGenerator
-    python3 -c "from koomesh.config import KooMeshConfig; print('KooMesh OK')"
+    python3 -c "from koomesh.config import KooMeshConfig; print('KooMesh Config OK')"
+    python3 -c "from koomesh.utils.exceptions import KooMeshException; print('KooMesh Exceptions OK')"
+    python3 -c "from koomesh.cli.main import cli; print('KooMesh CLI OK')"
 
 %files
     # These files will be copied during build

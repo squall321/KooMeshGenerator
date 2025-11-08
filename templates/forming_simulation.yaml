@@ -1,0 +1,83 @@
+# Sheet Metal Forming Simulation Template
+# =========================================
+#
+# This template is optimized for sheet metal forming simulations
+# with high quality mesh requirements and contact between tools and blank.
+#
+# Usage:
+#   koomesh run forming_simulation.yaml
+
+project:
+  name: "forming_simulation"
+  description: "Sheet metal forming meshing workflow"
+  output_dir: "output/forming"
+
+input:
+  step_files:
+    - "input/blank.step"
+    - "input/punch.step"
+    - "input/die.step"
+    - "input/holder.step"
+  working_dir: "."
+
+meshing:
+  algorithm: "delaunay"
+  mesh_size: 1.5  # Finer mesh for forming
+  element_type: "tet4"
+  optimize: true
+  boundary_layer:
+    enabled: false  # Not typically needed for forming
+
+quality:
+  enabled: true
+  thresholds:
+    aspect_ratio: 4.0  # Stricter for forming
+    jacobian: 0.3
+    skewness: 0.6
+  checks:
+    - "aspect_ratio"
+    - "jacobian"
+    - "skewness"
+  report_format: "html"
+  report_file: "quality_report.html"
+
+contact:
+  enabled: true
+  auto_detect: true
+  tolerance: 0.05  # Tight tolerance for tool-blank contact
+  self_contact: true
+  min_angle: 120.0
+  export_format: "lsdyna"
+
+materials:
+  library: "materials/forming.json"
+  assignments:
+    blank: "Steel_SPCC"
+    punch: "Steel_ToolSteel"
+    die: "Steel_ToolSteel"
+    holder: "Steel_Mild"
+  export_cards: true
+
+output:
+  format: "lsdyna"
+  filename: "forming_model.k"
+  include_contact: true
+  include_materials: true
+  separate_parts: true  # Separate files for each tool
+
+parallel:
+  enabled: true
+  n_jobs: -2  # Leave one core for system
+  batch_size: 50
+
+visualization:
+  enabled: true
+  screenshots:
+    - metric: "aspect_ratio"
+      filename: "mesh_quality.png"
+      view: "top"
+      window_size: [1920, 1080]
+    - metric: "none"
+      filename: "mesh_overview.png"
+      view: "isometric"
+      window_size: [1920, 1080]

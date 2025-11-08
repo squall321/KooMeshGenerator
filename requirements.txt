@@ -11,6 +11,15 @@ tqdm>=4.60.0
 pyyaml>=5.4.0
 dataclasses-json>=0.5.7
 
+# Phase 3: Config validation and batch processing
+pydantic>=2.0.0
+pandas>=1.3.0
+openpyxl>=3.0.0
+joblib>=1.0.0
+
+# Phase 4: Performance monitoring and optimization
+psutil>=5.8.0
+
 # Geometry and meshing (to be built separately)
 # pythonocc-core>=7.5.0  # Build from source - see build/scripts/
 # gmsh>=4.9.0            # Build from source - see build/scripts/

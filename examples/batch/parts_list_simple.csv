@@ -1,0 +1,6 @@
+id,input_file,output_file,mesh_size,element_type
+part_001,input/part1.step,output/part1.k,2.0,tet4
+part_002,input/part2.step,output/part2.k,2.0,tet4
+part_003,input/part3.step,output/part3.k,2.0,tet4
+part_004,input/part4.step,output/part4.k,2.0,tet4
+part_005,input/part5.step,output/part5.k,2.0,tet4

@@ -9,6 +9,10 @@ Commands:
 - batch: Batch process multiple STEP files
 - analyze: Analyze STEP file structure
 - validate: Validate LS-DYNA output
+- quality: Check mesh quality and generate reports
+- contact: Detect contact zones and export definitions
+- material: Manage material library
+- visualize: Create mesh visualizations and screenshots
 - info: Show system and dependency information
 - version: Show version information
 
@@ -16,6 +20,10 @@ Usage:
     koomesh generate input.step --mesh-size 1.0 -o output.k
     koomesh batch input_dir/ output_dir/ --mesh-size 1.0 -w 4
     koomesh analyze assembly.step
+    koomesh quality mesh.k --report html
+    koomesh contact mesh.k --self-contact
+    koomesh material list --filter steel
+    koomesh visualize mesh.k --screenshot output.png
     koomesh info
     koomesh --version
 """
@@ -368,6 +376,24 @@ def info(ctx):
     except ImportError:
         click.echo("SciPy: Not installed ✗")
 
+    try:
+        import pyvista
+        click.echo(f"PyVista: {pyvista.__version__} ✓")
+    except ImportError:
+        click.echo("PyVista: Not installed ✗")
+
+    try:
+        import joblib
+        click.echo(f"joblib: {joblib.__version__} ✓")
+    except ImportError:
+        click.echo("joblib: Not installed ✗")
+
+    try:
+        import click as click_lib
+        click.echo(f"Click: {click_lib.__version__} ✓")
+    except:
+        click.echo("Click: Available ✓")
+
     # Configuration
     config = ctx.obj['config']
     click.echo("\nConfiguration:")
@@ -382,6 +408,31 @@ def version():
     click.echo(f"KooMeshGenerator version {koomesh.__version__}")
     click.echo(f"License: {koomesh.__license__}")
     click.echo(f"Author: {koomesh.__author__}")
+
+
+# Register Phase 2 & 3 CLI commands
+try:
+    from koomesh.cli.commands.run import run
+    from koomesh.cli.commands.batch_convert import batch_convert
+    from koomesh.cli.commands.batch_mesh import batch_mesh
+    from koomesh.cli.commands.geometry import geometry
+    from koomesh.cli.commands.quality import quality
+    from koomesh.cli.commands.contact import contact
+    from koomesh.cli.commands.material import material
+    from koomesh.cli.commands.visualize import visualize
+
+    cli.add_command(run)
+    cli.add_command(batch_convert)
+    cli.add_command(batch_mesh)
+    cli.add_command(geometry)
+    cli.add_command(quality)
+    cli.add_command(contact)
+    cli.add_command(material)
+    cli.add_command(visualize)
+except ImportError as e:
+    # Phase 2/3 commands are optional - may not be available in minimal installations
+    logger = logging.getLogger(__name__)
+    logger.warning(f"Phase 2/3 CLI commands not available: {e}")
 
 
 if __name__ == '__main__':
