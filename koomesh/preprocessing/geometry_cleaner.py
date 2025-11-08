@@ -235,6 +235,12 @@ class GeometryCleaner:
         """
         Heal surfaces by sewing faces together
 
+        Enhanced with:
+        - Free edge detection and reporting
+        - Gap analysis
+        - Adaptive tolerance for difficult cases
+        - Multiple sewing passes
+
         Args:
             shape: Input shape
             tolerance: Sewing tolerance (default: 1e-3)
@@ -245,38 +251,119 @@ class GeometryCleaner:
         try:
             from OCC.Core.BRepBuilderAPI import BRepBuilderAPI_Sewing
             from OCC.Core.TopExp import TopExp_Explorer
-            from OCC.Core.TopAbs import TopAbs_FACE
+            from OCC.Core.TopAbs import TopAbs_FACE, TopAbs_EDGE
+            from OCC.Core.TopTools import TopTools_IndexedDataMapOfShapeListOfShape
+            from OCC.Core.TopExp import TopExp
         except ImportError:
             return shape, 0
 
         if tolerance is None:
             tolerance = 1e-3
 
-        # Create sewing object
+        # Count free edges before healing
+        free_edges_before = self._count_free_edges(shape)
+
+        # Create sewing object with options
         sewing = BRepBuilderAPI_Sewing(tolerance)
+        sewing.SetTolerance(tolerance)
+        sewing.SetMinTolerance(tolerance * 0.1)
+        sewing.SetMaxTolerance(tolerance * 10.0)
 
         # Add all faces
+        face_count = 0
         explorer = TopExp_Explorer(shape, TopAbs_FACE)
         while explorer.More():
             face = explorer.Current()
             sewing.Add(face)
+            face_count += 1
             explorer.Next()
+
+        self.logger.debug(f"Sewing {face_count} faces with tolerance {tolerance}")
 
         # Perform sewing
         sewing.Perform()
         sewed_shape = sewing.SewedShape()
 
-        # Count gaps filled (free edges before - free edges after)
-        gaps_filled = sewing.NbFreeEdges()  # Approximation
+        # Count free edges after healing
+        free_edges_after = self._count_free_edges(sewed_shape)
+
+        # Calculate gaps filled
+        gaps_filled = max(0, free_edges_before - free_edges_after)
+
+        # If still have many free edges, try with larger tolerance
+        if free_edges_after > face_count * 0.1 and tolerance < 1.0:
+            self.logger.debug(
+                f"Still have {free_edges_after} free edges, "
+                f"trying with larger tolerance..."
+            )
+
+            # Second pass with larger tolerance
+            sewing2 = BRepBuilderAPI_Sewing(tolerance * 5.0)
+            sewing2.SetTolerance(tolerance * 5.0)
+
+            # Add faces from first sewing result
+            explorer2 = TopExp_Explorer(sewed_shape, TopAbs_FACE)
+            while explorer2.More():
+                sewing2.Add(explorer2.Current())
+                explorer2.Next()
+
+            sewing2.Perform()
+            sewed_shape_2 = sewing2.SewedShape()
+
+            free_edges_after_2 = self._count_free_edges(sewed_shape_2)
+
+            # Use second result if better
+            if free_edges_after_2 < free_edges_after:
+                gaps_filled = max(0, free_edges_before - free_edges_after_2)
+                sewed_shape = sewed_shape_2
+                self.logger.debug(
+                    f"Second pass improved: {free_edges_after_2} free edges"
+                )
+
+        if gaps_filled > 0:
+            self.logger.debug(f"Filled {gaps_filled} gaps during surface healing")
 
         return sewed_shape, gaps_filled
+
+    def _count_free_edges(self, shape) -> int:
+        """
+        Count free edges (edges belonging to only one face)
+
+        Args:
+            shape: Shape to analyze
+
+        Returns:
+            Number of free edges
+        """
+        try:
+            from OCC.Core.TopExp import TopExp
+            from OCC.Core.TopTools import TopTools_IndexedDataMapOfShapeListOfShape
+            from OCC.Core.TopAbs import TopAbs_EDGE
+
+            edge_map = TopTools_IndexedDataMapOfShapeListOfShape()
+            TopExp.MapShapesAndAncestors_s(
+                shape, TopAbs_EDGE, TopAbs_FACE, edge_map
+            )
+
+            free_edges = 0
+            for i in range(1, edge_map.Extent() + 1):
+                face_list = edge_map.FindFromIndex(i)
+                if face_list.Extent() == 1:  # Edge belongs to only one face
+                    free_edges += 1
+
+            return free_edges
+
+        except:
+            return 0
 
     def _remove_small_features(self, shape, min_size: float):
         """
         Remove small features (holes, fillets, etc.)
 
-        This is a placeholder for actual small feature removal.
-        Full implementation would require more advanced algorithms.
+        Detects and removes:
+        - Small holes (circular edges with diameter < min_size)
+        - Small fillets (edges with radius < min_size)
+        - Small edges (edges with length < min_size)
 
         Args:
             shape: Input shape
@@ -285,21 +372,106 @@ class GeometryCleaner:
         Returns:
             Tuple of (cleaned_shape, features_removed)
         """
-        # NOTE: Full small feature removal is complex and would require:
-        # - Feature recognition algorithms
-        # - Topological operations
-        # - Geometric analysis
-        #
-        # For now, we return the shape unchanged
-        # This could be implemented using OCC.Core.ShapeUpgrade or custom algorithms
+        try:
+            from OCC.Core.TopExp import TopExp_Explorer
+            from OCC.Core.TopAbs import TopAbs_EDGE, TopAbs_FACE
+            from OCC.Core.BRep import BRep_Tool
+            from OCC.Core.GProp import GProp_GProps
+            from OCC.Core.BRepGProp import BRepGProp
+            from OCC.Core.BRepAdaptor import BRepAdaptor_Curve
+            from OCC.Core.GeomAbs import GeomAbs_Circle
+            from OCC.Core.TopoDS import TopoDS_Compound, TopoDS_Builder, TopoDS_Face
+            from OCC.Core.BRepBuilderAPI import BRepBuilderAPI_Copy
+        except ImportError:
+            self.logger.warning(
+                "PythonOCC not available. Returning shape unchanged."
+            )
+            return shape, 0
 
-        self.logger.warning(
-            "Small feature removal is not fully implemented. "
-            "Shape returned unchanged. "
-            "This feature requires advanced CAD kernel operations."
-        )
+        try:
+            features_removed = 0
+            faces_to_keep = []
 
-        return shape, 0
+            # Analyze each face
+            face_explorer = TopExp_Explorer(shape, TopAbs_FACE)
+            while face_explorer.More():
+                face = TopoDS_Face.DownCast(face_explorer.Current())
+                keep_face = True
+
+                # Analyze edges in this face
+                edge_explorer = TopExp_Explorer(face, TopAbs_EDGE)
+                small_edges = 0
+
+                while edge_explorer.More():
+                    edge = edge_explorer.Current()
+
+                    # Calculate edge length
+                    props = GProp_GProps()
+                    BRepGProp.LinearProperties_s(edge, props)
+                    edge_length = props.Mass()
+
+                    # Check if edge is too small
+                    if edge_length < min_size:
+                        small_edges += 1
+
+                    # Check if edge is a small circle (hole or fillet)
+                    try:
+                        curve_adaptor = BRepAdaptor_Curve(edge)
+                        if curve_adaptor.GetType() == GeomAbs_Circle:
+                            radius = curve_adaptor.Circle().Radius()
+                            diameter = 2.0 * radius
+
+                            if diameter < min_size:
+                                small_edges += 1
+                                self.logger.debug(
+                                    f"Found small circular edge: diameter={diameter:.3f} mm"
+                                )
+                    except:
+                        pass  # Edge analysis failed, skip
+
+                    edge_explorer.Next()
+
+                # Count total edges in face
+                edge_explorer2 = TopExp_Explorer(face, TopAbs_EDGE)
+                total_edges = 0
+                while edge_explorer2.More():
+                    total_edges += 1
+                    edge_explorer2.Next()
+
+                # If more than 30% of edges are small, consider removing face
+                if total_edges > 0 and (small_edges / total_edges) > 0.3:
+                    keep_face = False
+                    features_removed += 1
+                    self.logger.debug(
+                        f"Removing face with {small_edges}/{total_edges} small edges"
+                    )
+
+                if keep_face:
+                    faces_to_keep.append(face)
+
+                face_explorer.Next()
+
+            # If no features removed, return original shape
+            if features_removed == 0:
+                return shape, 0
+
+            # Rebuild shape from kept faces
+            builder = TopoDS_Builder()
+            compound = TopoDS_Compound()
+            builder.MakeCompound(compound)
+
+            for face in faces_to_keep:
+                builder.Add(compound, face)
+
+            self.logger.info(f"Removed {features_removed} small features")
+            return compound, features_removed
+
+        except Exception as e:
+            self.logger.warning(
+                f"Small feature removal failed: {str(e)}. "
+                "Returning original shape."
+            )
+            return shape, 0
 
     def remove_duplicates(self, input_file: str, output_file: str, tolerance: float = 1e-6) -> CleaningResult:
         """
@@ -380,13 +552,26 @@ class GeometryCleaner:
                 return shape
 
             # Build new shape from unique faces
-            # For simplicity, return the original shape
-            # Full implementation would rebuild the shape
-            self.logger.info(
-                f"Removed {self._count_faces(shape) - len(unique_faces)} duplicate faces"
-            )
+            num_duplicates = self._count_faces(shape) - len(unique_faces)
+            self.logger.info(f"Removed {num_duplicates} duplicate faces")
 
-            return shape
+            # Rebuild shape from unique faces
+            try:
+                builder = TopoDS_Builder()
+                compound = TopoDS_Compound()
+                builder.MakeCompound(compound)
+
+                for face in unique_faces:
+                    builder.Add(compound, face)
+
+                return compound
+
+            except Exception as e:
+                self.logger.warning(
+                    f"Failed to rebuild shape from unique faces: {str(e)}. "
+                    "Returning original shape."
+                )
+                return shape
 
         except ImportError:
             self.logger.warning(
