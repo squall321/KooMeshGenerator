@@ -9,6 +9,12 @@
 
 ## 🚀 Next Session? START HERE!
 
+**⚙️ Main 브랜치 설정 필요?**
+- **[MAIN_BRANCH_SETUP.md](MAIN_BRANCH_SETUP.md)** 🔧 Main 브랜치 설정 가이드
+  - 현재 브랜치에 모든 작업 포함됨 확인 완료
+  - Main 브랜치 생성 3가지 옵션
+  - 다음 세션에서 처리 가능
+
 **📌 다음 세션 시작 가이드 (3개 중 하나 선택)**:
 
 1. **[NEXT_SESSION.md](NEXT_SESSION.md)** ⭐ **가장 추천!**
