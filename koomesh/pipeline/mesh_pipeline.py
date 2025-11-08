@@ -457,16 +457,66 @@ class MeshGenerationPipeline:
 
         Returns:
             List of MeshData objects
+
+        Raises:
+            Exception: If mesh generation fails
         """
         self.progress.start_stage("meshing", "Generating meshes...")
-        # TODO: Implement in Day 3-4
-        raise NotImplementedError(
-            "Mesh generation to be implemented on Day 3-4.\n"
-            "This will include:\n"
-            "  - Mesher selection based on geometry type\n"
-            "  - Template settings application\n"
-            "  - Mesh generation"
-        )
+
+        try:
+            from koomesh.pipeline.mesh_generator import MeshGenerator
+
+            # Initialize generator
+            generator = MeshGenerator()
+
+            # Update progress
+            self.progress.update_stage(
+                "meshing",
+                0.1,
+                f"Meshing {len(shapes)} shape(s)..."
+            )
+
+            # Generate meshes
+            meshes = generator.generate(
+                shapes=shapes,
+                template=self.template,
+                mesh_size=self.config.mesh_size,
+                element_type=self.config.element_type,
+                min_element_size=self.config.min_element_size,
+                max_element_size=self.config.max_element_size
+            )
+
+            # Update progress
+            self.progress.update_stage(
+                "meshing",
+                0.9,
+                f"Generated {len(meshes)} mesh(es)"
+            )
+
+            # Get statistics
+            stats = generator.get_statistics(meshes)
+
+            # Complete stage
+            self.progress.complete_stage(
+                "meshing",
+                f"Generated {stats['total_meshes']} mesh(es): "
+                f"{stats['total_nodes']} nodes, "
+                f"{stats['total_elements']} elements"
+            )
+
+            self.logger.info(
+                f"Mesh generation complete: "
+                f"{stats['total_meshes']} mesh(es), "
+                f"{stats['total_elements']} elements"
+            )
+
+            return meshes
+
+        except Exception as e:
+            error_msg = f"Mesh generation failed: {str(e)}"
+            self.logger.error(error_msg)
+            self.progress.fail_stage("meshing", error_msg)
+            raise
 
     def _process_quality(self, meshes: List[MeshData]) -> List[MeshData]:
         """

@@ -16,6 +16,10 @@ from koomesh.pipeline.geometry_processor import (
     GeometryProcessor,
     GeometryProcessingError
 )
+from koomesh.pipeline.mesh_generator import (
+    MeshGenerator,
+    MeshGenerationError
+)
 from koomesh.pipeline import constants
 
 __all__ = [
@@ -27,5 +31,7 @@ __all__ = [
     'PipelineResult',
     'GeometryProcessor',
     'GeometryProcessingError',
+    'MeshGenerator',
+    'MeshGenerationError',
     'constants',
 ]
