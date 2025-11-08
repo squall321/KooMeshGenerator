@@ -391,16 +391,62 @@ class MeshGenerationPipeline:
 
         Returns:
             List of (shape, classification) tuples
+
+        Raises:
+            Exception: If geometry processing fails
         """
         self.progress.start_stage("geometry", "Reading STEP files...")
-        # TODO: Implement in Day 2
-        raise NotImplementedError(
-            "Geometry processing to be implemented on Day 2.\n"
-            "This will include:\n"
-            "  - STEP file reading\n"
-            "  - Geometry cleaning (duplicate removal, healing)\n"
-            "  - Shape classification"
-        )
+
+        try:
+            from koomesh.pipeline.geometry_processor import GeometryProcessor
+
+            # Initialize processor
+            processor = GeometryProcessor()
+
+            # Update progress
+            self.progress.update_stage(
+                "geometry",
+                0.2,
+                f"Processing {len(self.config.input_files)} file(s)..."
+            )
+
+            # Process all geometry files
+            shapes = processor.process(
+                input_files=self.config.input_files,
+                clean=self.config.clean_geometry,
+                tolerance=self.config.geometry_tolerance
+            )
+
+            # Update progress
+            self.progress.update_stage(
+                "geometry",
+                0.9,
+                f"Processed {len(shapes)} shape(s)"
+            )
+
+            # Get statistics
+            stats = processor.get_statistics(shapes)
+
+            # Complete stage
+            self.progress.complete_stage(
+                "geometry",
+                f"Processed {stats['total_shapes']} shapes: "
+                f"{stats['solid_count']} solids, "
+                f"{stats['shell_count']} shells, "
+                f"{stats['beam_count']} beams"
+            )
+
+            self.logger.info(
+                f"Geometry processing complete: {stats['total_shapes']} shapes processed"
+            )
+
+            return shapes
+
+        except Exception as e:
+            error_msg = f"Geometry processing failed: {str(e)}"
+            self.logger.error(error_msg)
+            self.progress.fail_stage("geometry", error_msg)
+            raise
 
     def _generate_meshes(self, shapes: List[Any]) -> List[MeshData]:
         """

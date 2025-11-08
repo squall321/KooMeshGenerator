@@ -76,7 +76,16 @@ DEFAULT_SELF_CONTACT_TOLERANCE_MM = 0.5
 
 # Geometry cleaning tolerance in millimeters
 # Used for duplicate removal and surface healing
-DEFAULT_GEOMETRY_TOLERANCE_MM = 1e-3  # 0.001 mm
+DEFAULT_GEOMETRY_TOLERANCE = 1e-3  # 0.001 mm
+DEFAULT_GEOMETRY_TOLERANCE_MM = DEFAULT_GEOMETRY_TOLERANCE  # Alias for compatibility
+
+# Minimum geometry tolerance in millimeters
+# Below this, numerical precision issues may occur
+MIN_GEOMETRY_TOLERANCE = 1e-6  # 0.000001 mm
+
+# Maximum geometry tolerance in millimeters
+# Above this, geometric accuracy may be compromised
+MAX_GEOMETRY_TOLERANCE = 1.0  # 1 mm
 
 # Minimum feature size in millimeters
 # Features smaller than this may be removed during cleaning
