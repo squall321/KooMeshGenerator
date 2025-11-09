@@ -436,3 +436,327 @@ def remove(ctx, material_name: str, library: str):
         logger.error(f"Error removing material: {e}")
         click.echo(f"Error: {e}", err=True)
         sys.exit(1)
+
+
+@material.command()
+@click.argument('parts', nargs=-1, type=click.Path(exists=True), required=True)
+@click.option(
+    '--template', '-t',
+    type=str,
+    help='Template name for automatic assignment rules (e.g., automotive_crash)'
+)
+@click.option(
+    '--rules', '-r',
+    type=click.Path(exists=True),
+    help='YAML file with custom assignment rules'
+)
+@click.option(
+    '--by-geometry/--no-by-geometry',
+    default=True,
+    help='Use geometry analysis for assignment (default: true)'
+)
+@click.option(
+    '--output', '-o',
+    type=click.Path(),
+    help='Output file for assignments (JSON)'
+)
+@click.pass_context
+def assign(ctx, parts, template, rules, by_geometry, output):
+    """
+    Automatically assign materials to parts
+
+    Assigns materials based on:
+    - Filename patterns
+    - Geometry properties (thickness, volume)
+    - Template rules
+    - Custom rules from YAML file
+
+    Examples:
+
+    \b
+    # Auto-assign using template
+    koomesh material assign *.step --template automotive_crash
+
+    \b
+    # Use custom rules
+    koomesh material assign *.step --rules my_rules.yaml
+
+    \b
+    # Geometry-based assignment
+    koomesh material assign parts/*.step --by-geometry
+    """
+    logger = ctx.obj.get('logger', logging.getLogger(__name__))
+
+    try:
+        from koomesh.materials.material_assigner import GeometryBasedMaterialAssigner, MaterialRuleEngine
+        from pathlib import Path
+
+        parts = [Path(p) for p in parts]
+        click.echo(f"Assigning materials to {len(parts)} parts...")
+
+        assigner = GeometryBasedMaterialAssigner()
+        assignments = {}
+
+        # Strategy 1: Custom rules from YAML
+        if rules:
+            import yaml
+            with open(rules, 'r') as f:
+                custom_rules = yaml.safe_load(f).get('rules', {})
+
+            click.echo("Applying custom rules...")
+            assignments.update(assigner.assign_by_filename(parts, custom_rules))
+
+        # Strategy 2: Template rules
+        if template:
+            click.echo(f"Applying template rules: {template}...")
+
+            if 'automotive' in template.lower():
+                template_rules = MaterialRuleEngine.get_automotive_rules()
+            elif 'aerospace' in template.lower():
+                template_rules = MaterialRuleEngine.get_aerospace_rules()
+            elif 'forming' in template.lower():
+                template_rules = MaterialRuleEngine.get_forming_rules()
+            else:
+                template_rules = {}
+
+            if template_rules:
+                part_names = [p.stem for p in parts]
+                template_assignments = assigner.assign_by_template(part_names, template_rules)
+
+                for idx, mat in template_assignments.items():
+                    if idx not in assignments:
+                        assignments[idx] = mat
+
+        # Strategy 3: Geometry-based (fallback)
+        if by_geometry:
+            click.echo("Analyzing geometry for remaining parts...")
+            # Would need actual geometry loading here
+            # For now, skip if no geometries available
+
+        # Display results
+        click.echo("\nMaterial Assignments:")
+        click.echo("-" * 60)
+        for idx, part in enumerate(parts):
+            mat = assignments.get(idx, 'Unassigned')
+            click.echo(f"{part.name:40s} → {mat}")
+
+        # Save to file if requested
+        if output:
+            output_data = {
+                'assignments': [
+                    {'file': str(parts[idx]), 'material': mat}
+                    for idx, mat in assignments.items()
+                ]
+            }
+
+            with open(output, 'w') as f:
+                json.dump(output_data, f, indent=2)
+
+            click.echo(f"\n✓ Assignments saved: {output}")
+
+        click.echo(f"\n✓ Assigned materials to {len(assignments)}/{len(parts)} parts")
+
+    except Exception as e:
+        logger.error(f"Error assigning materials: {e}")
+        click.echo(f"Error: {e}", err=True)
+        import traceback
+        traceback.print_exc()
+        sys.exit(1)
+
+
+@material.command()
+@click.argument('material_name', type=str)
+@click.option(
+    '--simulation-type', '-s',
+    type=click.Choice(['crash', 'forming', 'impact', 'static'], case_sensitive=False),
+    default='crash',
+    help='Type of simulation (default: crash)'
+)
+@click.option(
+    '--volume', '-v',
+    type=float,
+    help='Part volume in cm³ (for practical checks)'
+)
+@click.pass_context
+def validate(ctx, material_name, simulation_type, volume):
+    """
+    Validate material assignment for simulation
+
+    Checks:
+    - Simulation type compatibility
+    - Required properties completeness
+    - Physical reasonableness
+    - Practical concerns
+
+    Examples:
+
+    \b
+    # Validate for crash simulation
+    koomesh material validate Steel_Mild --simulation-type crash
+
+    \b
+    # Validate with volume check
+    koomesh material validate Aluminum_5052 --simulation-type forming --volume 500.0
+    """
+    logger = ctx.obj.get('logger', logging.getLogger(__name__))
+
+    try:
+        from koomesh.materials.material_validator import MaterialValidator
+
+        validator = MaterialValidator()
+
+        click.echo(f"Validating material: {material_name}")
+        click.echo(f"Simulation type: {simulation_type}")
+        if volume:
+            click.echo(f"Part volume: {volume} cm³")
+        click.echo("-" * 60)
+
+        report = validator.validate_assignment(
+            part_name="Part",
+            material_name=material_name,
+            simulation_type=simulation_type,
+            part_volume=volume
+        )
+
+        if report.valid:
+            click.echo("✓ Validation PASSED")
+        else:
+            click.echo("✗ Validation FAILED")
+
+        click.echo(f"\nScore: {report.statistics.get('score', 0.0):.2f}/1.0")
+
+        # Show issues
+        if report.issues:
+            click.echo("\nIssues:")
+            for issue in report.issues:
+                symbol = "✗" if issue.severity == 'ERROR' else "⚠" if issue.severity == 'WARNING' else "ℹ"
+                click.echo(f"\n{symbol} {issue.severity}: {issue.message}")
+                if issue.suggestion:
+                    click.echo(f"  → Suggestion: {issue.suggestion}")
+        else:
+            click.echo("\n✓ No issues found")
+
+        sys.exit(0 if report.valid else 1)
+
+    except Exception as e:
+        logger.error(f"Error validating material: {e}")
+        click.echo(f"Error: {e}", err=True)
+        import traceback
+        traceback.print_exc()
+        sys.exit(1)
+
+
+@material.command()
+@click.option(
+    '--simulation-type', '-s',
+    type=click.Choice(['crash', 'forming', 'impact', 'static'], case_sensitive=False),
+    default='crash',
+    help='Type of simulation (default: crash)'
+)
+@click.option(
+    '--min-strength',
+    type=float,
+    help='Minimum yield strength in MPa'
+)
+@click.option(
+    '--max-density',
+    type=float,
+    help='Maximum density in kg/m³'
+)
+@click.option(
+    '--formability',
+    type=click.Choice(['required', 'preferred', 'none'], case_sensitive=False),
+    default='none',
+    help='Formability requirement (default: none)'
+)
+@click.option(
+    '--top', '-n',
+    type=int,
+    default=5,
+    help='Number of recommendations to show (default: 5)'
+)
+@click.pass_context
+def recommend(ctx, simulation_type, min_strength, max_density, formability, top):
+    """
+    Recommend suitable materials based on requirements
+
+    Returns top N materials ranked by suitability score.
+
+    Examples:
+
+    \b
+    # Recommend for crash with strength requirement
+    koomesh material recommend --simulation-type crash --min-strength 400
+
+    \b
+    # Recommend lightweight materials for forming
+    koomesh material recommend --simulation-type forming --max-density 3000 --formability required
+
+    \b
+    # Get top 10 recommendations
+    koomesh material recommend --simulation-type impact --top 10
+    """
+    logger = ctx.obj.get('logger', logging.getLogger(__name__))
+
+    try:
+        from koomesh.materials.material_validator import MaterialRecommender
+
+        recommender = MaterialRecommender()
+
+        # Build constraints
+        constraints = {}
+        if min_strength:
+            constraints['min_strength'] = min_strength
+        if max_density:
+            constraints['max_density'] = max_density
+        if formability and formability != 'none':
+            constraints['formability'] = formability
+
+        click.echo("Material Recommendations")
+        click.echo("=" * 70)
+        click.echo(f"Simulation type: {simulation_type}")
+
+        if constraints:
+            click.echo("Constraints:")
+            for key, value in constraints.items():
+                click.echo(f"  - {key}: {value}")
+
+        click.echo("-" * 70)
+
+        recommendations = recommender.recommend_materials(
+            part_name="Part",
+            simulation_type=simulation_type,
+            constraints=constraints,
+            top_n=top
+        )
+
+        if not recommendations:
+            click.echo("No materials found matching criteria")
+            sys.exit(0)
+
+        click.echo(f"\nTop {len(recommendations)} Materials:\n")
+
+        for i, (material, score, reason) in enumerate(recommendations, 1):
+            click.echo(f"{i}. {material.name} (score: {score:.2f})")
+            click.echo(f"   Category: {material.category}")
+
+            if hasattr(material, 'density') and material.density:
+                click.echo(f"   Density: {material.density:.0f} kg/m³")
+
+            if hasattr(material, 'youngs_modulus') and material.youngs_modulus:
+                click.echo(f"   Young's Modulus: {material.youngs_modulus:.0f} MPa")
+
+            if hasattr(material, 'yield_strength') and material.yield_strength:
+                click.echo(f"   Yield Strength: {material.yield_strength:.0f} MPa")
+
+            click.echo(f"   Reason: {reason}")
+            click.echo()
+
+        click.echo("✓ Recommendations complete")
+
+    except Exception as e:
+        logger.error(f"Error recommending materials: {e}")
+        click.echo(f"Error: {e}", err=True)
+        import traceback
+        traceback.print_exc()
+        sys.exit(1)

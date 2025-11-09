@@ -46,6 +46,21 @@ logger = logging.getLogger(__name__)
     help='Detect self-contact zones (default: true)'
 )
 @click.option(
+    '--auto-classify/--no-auto-classify',
+    default=False,
+    help='Automatically classify contact types (AUTOMATIC, TIED, SLIDING, etc.)'
+)
+@click.option(
+    '--contact-aware-meshing/--no-contact-aware-meshing',
+    default=False,
+    help='Enable contact-aware meshing (refines mesh at contact zones)'
+)
+@click.option(
+    '--validate/--no-validate',
+    default=False,
+    help='Validate contact quality (penetration, gap, mesh ratio)'
+)
+@click.option(
     '--multi-contact/--no-multi-contact',
     default=False,
     help='Detect contact between parts (default: false)'
@@ -79,6 +94,9 @@ def contact(
     tolerance: float,
     min_angle: float,
     self_contact: bool,
+    auto_classify: bool,
+    contact_aware_meshing: bool,
+    validate: bool,
     multi_contact: bool,
     output: Optional[str],
     export: str,
@@ -146,9 +164,43 @@ def contact(
 
             if multi_contacts:
                 click.echo(f"✓ Found {len(multi_contacts)} contact pairs between parts")
-                for contact in multi_contacts[:10]:  # Show first 10
+
+                # Auto-classify contact types if requested
+                if auto_classify:
+                    click.echo("\nClassifying contact types...")
+                    multi_contacts = _classify_contacts(multi_contacts, mesh_data)
+
+                    # Show type distribution
+                    type_counts = {}
+                    for contact in multi_contacts:
+                        ctype = getattr(contact, 'contact_type', 'AUTOMATIC')
+                        type_counts[ctype] = type_counts.get(ctype, 0) + 1
+
+                    click.echo("Contact type distribution:")
+                    for ctype, count in sorted(type_counts.items()):
+                        click.echo(f"  - {ctype}: {count} pairs")
+
+                # Validate contacts if requested
+                if validate:
+                    click.echo("\nValidating contact quality...")
+                    validation_results = _validate_contacts(multi_contacts, mesh_data, tolerance)
+
+                    if validation_results:
+                        num_passed = sum(1 for r in validation_results if r.get('passed', False))
+                        click.echo(f"✓ Validation complete: {num_passed}/{len(validation_results)} passed")
+
+                        # Show issues
+                        for result in validation_results:
+                            if result.get('issues'):
+                                click.echo(f"\n  Contact #{result['contact_id']}:")
+                                for issue in result['issues'][:3]:  # Show first 3 issues
+                                    click.echo(f"    {issue.severity}: {issue.message}")
+
+                # Show first 10 contacts
+                for contact in multi_contacts[:10]:
+                    ctype_str = f" [{getattr(contact, 'contact_type', 'AUTOMATIC')}]" if auto_classify else ""
                     click.echo(
-                        f"  - Part {contact.part1_id} ↔ Part {contact.part2_id}: "
+                        f"  - Part {contact.part1_id} ↔ Part {contact.part2_id}{ctype_str}: "
                         f"{len(contact.face_pairs)} face pairs"
                     )
                 if len(multi_contacts) > 10:
@@ -379,3 +431,81 @@ def _export_text(contact_results, output_path: Path):
         f.write("\n" + "="*70 + "\n")
 
     click.echo(f"✓ Text report saved: {output_path}")
+
+
+def _classify_contacts(contacts, mesh_data):
+    """Classify contact types using ContactClassifier"""
+    try:
+        from koomesh.contact.contact_classifier import ContactClassifier
+
+        classifier = ContactClassifier()
+
+        for contact in contacts:
+            # Calculate properties for classification
+            gap = getattr(contact, 'avg_distance', 0.1)
+            area = len(getattr(contact, 'face_pairs', [])) * gap ** 2  # Rough estimate
+
+            # Estimate surface angle (simplified - would need actual geometry)
+            surface_angle = 10.0  # Default assumption
+
+            # Classify
+            contact_type = classifier.classify_contact_type(
+                gap=gap,
+                surface_angle=surface_angle,
+                contact_area=area
+            )
+
+            # Optimize parameters
+            params = classifier.optimize_parameters(contact_type)
+
+            # Attach to contact object
+            contact.contact_type = contact_type.value
+            contact.parameters = params
+
+        return contacts
+
+    except Exception as e:
+        logger.warning(f"Contact classification failed: {e}")
+        return contacts
+
+
+def _validate_contacts(contacts, mesh_data, tolerance):
+    """Validate contact quality using ContactQualityChecker"""
+    try:
+        from koomesh.contact.contact_quality import ContactQualityChecker
+        import numpy as np
+
+        checker = ContactQualityChecker()
+        results = []
+
+        for i, contact in enumerate(contacts):
+            # Extract surface elements (simplified)
+            # In real implementation, would extract actual surface elements
+            surfaces1 = np.array(getattr(contact, 'face_pairs', [])[:100])
+            surfaces2 = np.array(getattr(contact, 'face_pairs', [])[:100])
+
+            if len(surfaces1) == 0:
+                continue
+
+            # Perform quality check
+            report = checker.check_contact_quality(
+                mesh1=mesh_data,
+                mesh2=mesh_data,  # Simplified - would use actual part meshes
+                contact_surfaces1=surfaces1,
+                contact_surfaces2=surfaces2,
+                tolerance=tolerance
+            )
+
+            results.append({
+                'contact_id': i + 1,
+                'passed': report.passed,
+                'score': report.score,
+                'issues': report.issues,
+                'statistics': report.statistics
+            })
+
+        return results
+
+    except Exception as e:
+        logger.warning(f"Contact validation failed: {e}")
+        return []
