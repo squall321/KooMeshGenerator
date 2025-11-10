@@ -21,7 +21,7 @@ For more information, see the documentation at:
 https://github.com/yourorg/KooMeshGenerator
 """
 
-__version__ = "1.0.0"
+__version__ = "0.1.0"
 __author__ = "KooMesh Team"
 __license__ = "MIT"
 

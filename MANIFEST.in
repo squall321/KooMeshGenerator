@@ -1,0 +1,26 @@
+# Include important documentation and configuration files
+include README.md
+include LICENSE
+include CONTRIBUTING.md
+include requirements.txt
+include requirements-dev.txt
+include pyproject.toml
+include setup.py
+include setup.cfg
+include Makefile
+
+# Include configuration examples
+include koomesh_config.example.yaml
+
+# Include pre-commit hooks configuration
+include .pre-commit-config.yaml
+
+# Include GitHub workflows
+recursive-include .github/workflows *.yml
+
+# Exclude build artifacts, cache, and temporary files
+global-exclude __pycache__
+global-exclude *.py[cod]
+global-exclude *.so
+global-exclude .DS_Store
+global-exclude *.swp
