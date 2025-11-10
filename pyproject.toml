@@ -1,23 +1,25 @@
 [build-system]
-requires = ["setuptools>=45", "wheel", "setuptools_scm[toml]>=6.2"]
+requires = ["setuptools>=61.0", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
 name = "koomesh"
-version = "1.0.0"
-description = "Automated mesh generation from STEP files with LS-DYNA output"
+version = "0.1.0"
+description = "Automated mesh generator for LS-DYNA FEA simulations"
 readme = "README.md"
-requires-python = ">=3.9"
+requires-python = ">=3.8"
 license = {text = "MIT"}
 authors = [
-    {name = "KooMesh Team", email = "info@koomesh.dev"}
+    {name = "KooMesh Team", email = "koomesh@example.com"}
 ]
-keywords = ["mesh", "generation", "CAD", "STEP", "FEM", "LS-DYNA"]
+keywords = ["mesh", "FEA", "LS-DYNA", "simulation", "CAD"]
 classifiers = [
-    "Development Status :: 4 - Beta",
+    "Development Status :: 3 - Alpha",
     "Intended Audience :: Science/Research",
-    "Topic :: Scientific/Engineering",
+    "Topic :: Scientific/Engineering :: Physics",
     "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.8",
     "Programming Language :: Python :: 3.9",
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
@@ -27,8 +29,6 @@ dependencies = [
     "numpy>=1.20.0",
     "scipy>=1.7.0",
     "click>=8.0.0",
-    "tqdm>=4.60.0",
-    "dataclasses-json>=0.5.7",
     "pyyaml>=5.4.0",
 ]
 
@@ -36,31 +36,52 @@ dependencies = [
 dev = [
     "pytest>=7.0.0",
     "pytest-cov>=3.0.0",
-    "pytest-benchmark>=3.4.1",
     "black>=22.0.0",
     "flake8>=4.0.0",
+    "isort>=5.10.0",
     "mypy>=0.950",
-    "sphinx>=4.5.0",
-    "sphinx-rtd-theme>=1.0.0",
+    "pre-commit>=2.17.0",
+    "bandit>=1.7.0",
+    "safety>=2.0.0",
 ]
-gmsh = ["gmsh>=4.9.0"]
+docs = [
+    "sphinx>=4.5.0",
+    "sphinx_rtd_theme>=1.0.0",
+    "myst-parser>=0.18.0",
+]
+cad = [
+    "pythonocc-core>=7.5.0",
+]
+mesh = [
+    "gmsh>=4.9.0",
+]
+all = [
+    "pythonocc-core>=7.5.0",
+    "gmsh>=4.9.0",
+]
 
 [project.scripts]
-koomesh = "koomesh.cli.main:cli"
+koomesh = "koomesh.cli.main:main"
+
+[project.urls]
+Homepage = "https://github.com/yourusername/KooMeshGenerator"
+Documentation = "https://koomeshgenerator.readthedocs.io"
+Repository = "https://github.com/yourusername/KooMeshGenerator"
+"Bug Tracker" = "https://github.com/yourusername/KooMeshGenerator/issues"
 
 [tool.black]
 line-length = 100
-target-version = ['py39', 'py310', 'py311']
+target-version = ["py38", "py39", "py310", "py311"]
 include = '\.pyi?$'
-exclude = '''
+extend-exclude = '''
 /(
-    \.git
+  # directories
+  \.eggs
+  | \.git
   | \.hg
   | \.mypy_cache
   | \.tox
   | \.venv
-  | _build
-  | buck-out
   | build
   | dist
 )/
@@ -77,26 +98,26 @@ ensure_newline_before_comments = true
 
 [tool.pytest.ini_options]
 minversion = "7.0"
-addopts = "-ra -q --strict-markers"
-testpaths = [
-    "tests",
+addopts = [
+    "-ra",
+    "--strict-markers",
+    "--strict-config",
+    "--cov=koomesh",
+    "--cov-report=term-missing",
+    "--cov-report=xml",
+    "--cov-report=html",
 ]
-python_files = "test_*.py"
-python_classes = "Test*"
-python_functions = "test_*"
-
-[tool.mypy]
-python_version = "3.9"
-warn_return_any = true
-warn_unused_configs = true
-disallow_untyped_defs = true
-ignore_missing_imports = true
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
 
 [tool.coverage.run]
 source = ["koomesh"]
 omit = [
     "*/tests/*",
-    "*/benchmarks/*",
+    "*/test_*.py",
+    "*/__init__.py",
 ]
 
 [tool.coverage.report]
@@ -107,6 +128,26 @@ exclude_lines = [
     "raise NotImplementedError",
     "if __name__ == .__main__.:",
     "if TYPE_CHECKING:",
-    "class .*\\bProtocol\\):",
-    "@(abc\\.)?abstractmethod",
+    "@abstractmethod",
 ]
+
+[tool.mypy]
+python_version = "3.8"
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = false
+disallow_incomplete_defs = false
+check_untyped_defs = true
+no_implicit_optional = true
+warn_redundant_casts = true
+warn_unused_ignores = true
+warn_no_return = true
+strict_optional = true
+
+[[tool.mypy.overrides]]
+module = [
+    "OCC.*",
+    "gmsh.*",
+    "scipy.*",
+]
+ignore_missing_imports = true
