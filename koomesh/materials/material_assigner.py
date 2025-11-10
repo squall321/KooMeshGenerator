@@ -8,8 +8,10 @@ from typing import List, Dict, Any, Optional
 from pathlib import Path
 import fnmatch
 import logging
+import time
 
 from koomesh.materials.material_library import MaterialLibrary
+from koomesh.utils.logging_utils import PerformanceLogger
 
 
 class GeometryBasedMaterialAssigner:
@@ -33,6 +35,7 @@ class GeometryBasedMaterialAssigner:
     def __init__(self):
         self.logger = logging.getLogger(__name__)
         self.material_library = MaterialLibrary()
+        self.perf_logger = PerformanceLogger(__name__)
 
     def assign_by_filename(
         self,
@@ -78,26 +81,30 @@ class GeometryBasedMaterialAssigner:
             return {}
 
         try:
-            assignments = {}
+            with self.perf_logger.timer("filename_based_assignment"):
+                assignments = {}
 
-            for i, filepath in enumerate(part_files):
-                filename = filepath.name.lower()
+                for i, filepath in enumerate(part_files):
+                    filename = filepath.name.lower()
 
-                # Try each rule in order
-                for pattern, material in rules.items():
-                    if fnmatch.fnmatch(filename, pattern.lower()):
-                        assignments[i] = material
-                        self.logger.info(
-                            f"Assigned {material} to {filepath.name} "
-                            f"(matched pattern '{pattern}')"
-                        )
-                        break
+                    # Try each rule in order
+                    for pattern, material in rules.items():
+                        if fnmatch.fnmatch(filename, pattern.lower()):
+                            assignments[i] = material
+                            self.logger.debug(
+                                f"Assigned {material} to {filepath.name} "
+                                f"(matched pattern '{pattern}')"
+                            )
+                            self.perf_logger.increment_counter("materials_assigned", 1)
+                            break
 
-            self.logger.info(
-                f"Filename-based assignment: {len(assignments)}/{len(part_files)} parts"
-            )
+                coverage = len(assignments) / len(part_files) * 100
+                self.logger.info(
+                    f"Filename-based assignment: {len(assignments)}/{len(part_files)} parts "
+                    f"({coverage:.1f}% coverage)"
+                )
 
-            return assignments
+                return assignments
 
         except Exception as e:
             self.logger.error(f"Filename-based assignment failed: {e}")

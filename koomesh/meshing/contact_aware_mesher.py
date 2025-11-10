@@ -8,8 +8,10 @@ from typing import List, Tuple, Optional, Dict, Any
 import numpy as np
 from dataclasses import dataclass
 import logging
+import time
 
 from koomesh.meshing.mesh_data import MeshData
+from koomesh.utils.logging_utils import PerformanceLogger
 
 
 @dataclass
@@ -44,6 +46,7 @@ class ContactAwareMesher:
 
     def __init__(self):
         self.logger = logging.getLogger(__name__)
+        self.perf_logger = PerformanceLogger(__name__)
 
     def detect_potential_contact_zones(
         self,
@@ -89,20 +92,37 @@ class ContactAwareMesher:
         self.logger.info(f"Detecting contact zones (tolerance={tolerance}mm)...")
 
         try:
-            for i in range(len(shapes)):
-                for j in range(i + 1, len(shapes)):
-                    # Quick bounding box check
-                    if not self._bbox_overlap(shapes[i], shapes[j], tolerance * 5):
-                        continue
+            with self.perf_logger.timer("contact_zone_detection"):
+                num_pairs = len(shapes) * (len(shapes) - 1) // 2
+                self.logger.debug(f"Checking {num_pairs} shape pairs")
 
-                    # Detailed surface proximity check
-                    zones = self._find_close_surfaces(
-                        shapes[i], shapes[j], i, j, tolerance
-                    )
+                checked_pairs = 0
+                for i in range(len(shapes)):
+                    for j in range(i + 1, len(shapes)):
+                        checked_pairs += 1
 
-                    contact_zones.extend(zones)
+                        # Quick bounding box check
+                        if not self._bbox_overlap(shapes[i], shapes[j], tolerance * 5):
+                            continue
 
-            self.logger.info(f"Found {len(contact_zones)} contact zones")
+                        # Detailed surface proximity check
+                        zones = self._find_close_surfaces(
+                            shapes[i], shapes[j], i, j, tolerance
+                        )
+
+                        contact_zones.extend(zones)
+
+                        # Log progress every 10 pairs
+                        if checked_pairs % 10 == 0:
+                            self.logger.debug(
+                                f"Progress: {checked_pairs}/{num_pairs} pairs checked, "
+                                f"{len(contact_zones)} contacts found"
+                            )
+
+            self.logger.info(
+                f"Found {len(contact_zones)} contact zones from {num_pairs} shape pairs"
+            )
+            self.perf_logger.increment_counter("contact_zones_detected", len(contact_zones))
             return contact_zones
 
         except Exception as e:

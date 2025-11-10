@@ -4,13 +4,15 @@ Assembly Contact Management
 Manages contact detection and definition for multi-part assemblies.
 """
 
-from typing import List, Dict, Any, Tuple
+from typing import List, Dict, Any, Tuple, Optional
 from dataclasses import dataclass
 import numpy as np
 import logging
+import time
 
 from koomesh.meshing.mesh_data import MeshData
 from koomesh.contact.contact_classifier import ContactType, ContactClassifier, ContactParameters
+from koomesh.utils.logging_utils import PerformanceLogger, ProgressReporter
 
 
 @dataclass
@@ -141,6 +143,7 @@ class AssemblyContactManager:
     def __init__(self):
         self.logger = logging.getLogger(__name__)
         self.classifier = ContactClassifier()
+        self.perf_logger = PerformanceLogger(__name__)
 
     def detect_all_contacts(
         self,
@@ -196,56 +199,78 @@ class AssemblyContactManager:
                 raise ValueError(f"materials length ({len(materials)}) must match parts length ({len(parts)})")
 
         try:
-            self.logger.info(
-                f"Detecting contacts in assembly ({len(parts)} parts)..."
-            )
-
-            # Build spatial hash grid
-            grid = SpatialHashGrid(cell_size=tolerance * 10)
-
-            for i, part in enumerate(parts):
-                bbox = self._get_bounding_box(part)
-                grid.insert(i, bbox)
-
-            # Find candidate pairs using spatial hash
-            candidate_pairs = []
-            for i in range(len(parts)):
-                bbox_i = grid.bboxes[i]
-
-                # Expand bbox by tolerance for query
-                min_corner = bbox_i[0] - tolerance
-                max_corner = bbox_i[1] + tolerance
-
-                neighbors = grid.query((min_corner, max_corner))
-
-                for j in neighbors:
-                    if i < j:  # Avoid duplicates and self-contact
-                        candidate_pairs.append((i, j))
-
-            self.logger.info(
-                f"Spatial hash found {len(candidate_pairs)} candidate pairs "
-                f"(vs {len(parts)*(len(parts)-1)//2} brute force)"
-            )
-
-            # Detailed contact detection for candidates
-            contacts = []
-            for i, j in candidate_pairs:
-                contact = self._detect_contact_detailed(
-                    parts[i], parts[j],
-                    part_names[i], part_names[j],
-                    i, j,
-                    tolerance=tolerance,
-                    material1=materials[i] if materials else None,
-                    material2=materials[j] if materials else None,
-                    simulation_type=simulation_type
+            with self.perf_logger.timer("assembly_contact_detection"):
+                self.logger.info(
+                    f"Detecting contacts in assembly ({len(parts)} parts)..."
                 )
 
-                if contact:
-                    contacts.append(contact)
+                # Build spatial hash grid
+                with self.perf_logger.timer("spatial_hash_build"):
+                    grid = SpatialHashGrid(cell_size=tolerance * 10)
 
-            self.logger.info(f"Detected {len(contacts)} actual contact pairs")
+                    for i, part in enumerate(parts):
+                        bbox = self._get_bounding_box(part)
+                        grid.insert(i, bbox)
 
-            return contacts
+                # Find candidate pairs using spatial hash
+                with self.perf_logger.timer("spatial_hash_query"):
+                    candidate_pairs = []
+                    for i in range(len(parts)):
+                        bbox_i = grid.bboxes[i]
+
+                        # Expand bbox by tolerance for query
+                        min_corner = bbox_i[0] - tolerance
+                        max_corner = bbox_i[1] + tolerance
+
+                        neighbors = grid.query((min_corner, max_corner))
+
+                        for j in neighbors:
+                            if i < j:  # Avoid duplicates and self-contact
+                                candidate_pairs.append((i, j))
+
+                brute_force_pairs = len(parts)*(len(parts)-1)//2
+                reduction = 100 * (1 - len(candidate_pairs) / brute_force_pairs) if brute_force_pairs > 0 else 0
+                self.logger.info(
+                    f"Spatial hash found {len(candidate_pairs)} candidate pairs "
+                    f"(vs {brute_force_pairs} brute force, {reduction:.1f}% reduction)"
+                )
+                self.perf_logger.increment_counter("candidate_pairs", len(candidate_pairs))
+
+                # Detailed contact detection for candidates
+                with self.perf_logger.timer("detailed_contact_detection"):
+                    contacts = []
+                    progress = ProgressReporter(
+                        "Checking contact candidates",
+                        total=len(candidate_pairs),
+                        logger_name=__name__
+                    )
+
+                    for idx, (i, j) in enumerate(candidate_pairs):
+                        contact = self._detect_contact_detailed(
+                            parts[i], parts[j],
+                            part_names[i], part_names[j],
+                            i, j,
+                            tolerance=tolerance,
+                            material1=materials[i] if materials else None,
+                            material2=materials[j] if materials else None,
+                            simulation_type=simulation_type
+                        )
+
+                        if contact:
+                            contacts.append(contact)
+
+                        progress.update(1)
+
+                    progress.finish()
+
+                self.logger.info(
+                    f"Detected {len(contacts)} actual contact pairs "
+                    f"({len(contacts)/len(candidate_pairs)*100 if candidate_pairs else 0:.1f}% of candidates)"
+                )
+                self.perf_logger.increment_counter("contacts_detected", len(contacts))
+                self.perf_logger.log_statistics()
+
+                return contacts
 
         except Exception as e:
             self.logger.error(f"Contact detection failed: {e}")
