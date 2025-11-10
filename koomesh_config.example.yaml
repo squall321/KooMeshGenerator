@@ -1,0 +1,103 @@
+# KooMeshGenerator Configuration File Example
+# Copy this file to koomesh_config.yaml and customize as needed
+
+# Meshing configuration
+meshing:
+  # Base mesh element size (mm)
+  mesh_size: 5.0
+  
+  # Element type: SOLID, SHELL, or BEAM
+  element_type: SOLID
+  
+  # Refinement factor for contact zones (0.0-1.0)
+  # 0.5 means half the base mesh size at contacts
+  refinement_factor: 0.5
+  
+  # Minimum element quality threshold (0.0-1.0)
+  quality_threshold: 0.3
+  
+  # Maximum mesh improvement iterations
+  max_iterations: 10
+
+# Contact detection and configuration
+contact:
+  # Contact detection tolerance (mm)
+  tolerance: 1.0
+  
+  # Automatically classify contact types
+  auto_classify: true
+  
+  # Enable contact-aware meshing (refine at contacts)
+  contact_aware_meshing: true
+  
+  # Validate contact quality
+  validate: true
+  
+  # Contact type specific settings
+  types:
+    spot_weld:
+      gap_threshold: 0.01      # mm
+      area_threshold: 10.0     # mm²
+      nfls: 500.0              # Normal failure stress (MPa)
+      sfls: 400.0              # Shear failure stress (MPa)
+    
+    tied:
+      gap_threshold: 0.01      # mm
+    
+    sliding:
+      friction_static: 0.2
+      friction_dynamic: 0.15
+
+# Material assignment configuration
+materials:
+  # Industry template: automotive, aerospace, forming
+  template: automotive
+  
+  # Automatically assign materials
+  auto_assign: true
+  
+  # Default material if no match found
+  default_material: Steel_Mild
+  
+  # Filename-based material assignment rules
+  # Pattern matching (glob-style)
+  rules:
+    '*hood*': Aluminum_5052
+    '*pillar*': Steel_UltraHighStrength
+    '*floor*': Steel_HighStrength
+    '*bumper*': Plastic_PP
+    '*door*': Steel_HighStrength
+    
+# Output configuration
+output:
+  # Output format: lsdyna, abaqus, nastran
+  format: lsdyna
+  
+  # Numerical precision (decimal places)
+  precision: 8
+  
+  # Include descriptive comments in output
+  include_comments: true
+  
+  # Compress output file (gzip)
+  compress: false
+  
+  # Output directory (default: current directory)
+  directory: ./output
+
+# Logging configuration
+logging:
+  # Logging level: DEBUG, INFO, WARNING, ERROR
+  level: INFO
+  
+  # Log file path (null for console only)
+  file: null
+  
+  # Log format: simple, detailed, json
+  format: detailed
+  
+  # Enable performance tracking
+  performance_tracking: true
+  
+  # Show progress bars
+  show_progress: true
