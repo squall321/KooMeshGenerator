@@ -59,26 +59,55 @@ class ContactAwareMesher:
 
         Returns:
             List of ContactZone objects
+
+        Raises:
+            ValueError: If shapes list is empty or tolerance is invalid
+            TypeError: If shapes is not a list or contains invalid objects
         """
+        # Input validation
+        if shapes is None:
+            raise TypeError("shapes cannot be None")
+
+        if not isinstance(shapes, list):
+            raise TypeError(f"shapes must be a list, got {type(shapes).__name__}")
+
+        if len(shapes) == 0:
+            raise ValueError("shapes list is empty - need at least 2 shapes to detect contacts")
+
+        if len(shapes) == 1:
+            self.logger.warning("Only 1 shape provided - no contacts possible")
+            return []
+
+        if tolerance <= 0:
+            raise ValueError(f"tolerance must be positive, got {tolerance}")
+
+        if tolerance > 1000:
+            self.logger.warning(f"Very large tolerance ({tolerance}mm) may cause performance issues")
+
         contact_zones = []
 
         self.logger.info(f"Detecting contact zones (tolerance={tolerance}mm)...")
 
-        for i in range(len(shapes)):
-            for j in range(i + 1, len(shapes)):
-                # Quick bounding box check
-                if not self._bbox_overlap(shapes[i], shapes[j], tolerance * 5):
-                    continue
+        try:
+            for i in range(len(shapes)):
+                for j in range(i + 1, len(shapes)):
+                    # Quick bounding box check
+                    if not self._bbox_overlap(shapes[i], shapes[j], tolerance * 5):
+                        continue
 
-                # Detailed surface proximity check
-                zones = self._find_close_surfaces(
-                    shapes[i], shapes[j], i, j, tolerance
-                )
+                    # Detailed surface proximity check
+                    zones = self._find_close_surfaces(
+                        shapes[i], shapes[j], i, j, tolerance
+                    )
 
-                contact_zones.extend(zones)
+                    contact_zones.extend(zones)
 
-        self.logger.info(f"Found {len(contact_zones)} contact zones")
-        return contact_zones
+            self.logger.info(f"Found {len(contact_zones)} contact zones")
+            return contact_zones
+
+        except Exception as e:
+            self.logger.error(f"Failed to detect contact zones: {e}")
+            raise RuntimeError(f"Contact zone detection failed: {e}") from e
 
     def _bbox_overlap(self, shape1, shape2, tolerance: float) -> bool:
         """Check if bounding boxes overlap with tolerance."""
@@ -190,54 +219,90 @@ class ContactAwareMesher:
             refinement_factor: Refinement factor (0.5 = half size at contacts)
             boundary_layers: Number of boundary layers to generate
             growth_rate: Growth rate for boundary layers
+
+        Raises:
+            ValueError: If parameters are invalid
+            RuntimeError: If GMSH operations fail
         """
-        import gmsh
+        # Input validation
+        if gmsh_model is None:
+            raise TypeError("gmsh_model cannot be None")
+
+        if contact_zones is None:
+            raise TypeError("contact_zones cannot be None")
+
+        if not isinstance(contact_zones, list):
+            raise TypeError(f"contact_zones must be a list, got {type(contact_zones).__name__}")
 
         if not contact_zones:
             self.logger.info("No contact zones to refine")
             return
 
-        refined_size = base_mesh_size * refinement_factor
+        if base_mesh_size <= 0:
+            raise ValueError(f"base_mesh_size must be positive, got {base_mesh_size}")
 
-        self.logger.info(
-            f"Applying contact refinement: {len(contact_zones)} zones, "
-            f"size {refined_size:.2f}mm (factor={refinement_factor})"
-        )
+        if refinement_factor <= 0 or refinement_factor > 1:
+            raise ValueError(f"refinement_factor must be in (0, 1], got {refinement_factor}")
 
-        # Create distance field from contact zones
-        field_id = 1
+        if boundary_layers < 0:
+            raise ValueError(f"boundary_layers must be non-negative, got {boundary_layers}")
 
-        # Create ball field for each contact zone
-        for i, zone in enumerate(contact_zones):
-            # Ball field centered at contact zone
-            gmsh.model.mesh.field.add("Ball", field_id + i)
-            gmsh.model.mesh.field.setNumber(field_id + i, "VIn", refined_size)
-            gmsh.model.mesh.field.setNumber(field_id + i, "VOut", base_mesh_size)
-            gmsh.model.mesh.field.setNumber(field_id + i, "Radius", zone.area ** 0.5)
-            gmsh.model.mesh.field.setNumber(field_id + i, "Thickness", base_mesh_size)
-            gmsh.model.mesh.field.setNumber(field_id + i, "XCenter", zone.center[0])
-            gmsh.model.mesh.field.setNumber(field_id + i, "YCenter", zone.center[1])
-            gmsh.model.mesh.field.setNumber(field_id + i, "ZCenter", zone.center[2])
+        if growth_rate < 1.0:
+            raise ValueError(f"growth_rate must be >= 1.0, got {growth_rate}")
 
-        # Combine all ball fields with Min
-        if len(contact_zones) > 1:
-            min_field_id = field_id + len(contact_zones)
-            gmsh.model.mesh.field.add("Min", min_field_id)
-            gmsh.model.mesh.field.setNumbers(
-                min_field_id, "FieldsList",
-                list(range(field_id, field_id + len(contact_zones)))
+        try:
+            import gmsh
+
+            refined_size = base_mesh_size * refinement_factor
+
+            self.logger.info(
+                f"Applying contact refinement: {len(contact_zones)} zones, "
+                f"size {refined_size:.2f}mm (factor={refinement_factor})"
             )
-            gmsh.model.mesh.field.setAsBackgroundMesh(min_field_id)
-        else:
-            gmsh.model.mesh.field.setAsBackgroundMesh(field_id)
 
-        # Apply boundary layers if requested
-        if boundary_layers > 0:
-            self._apply_boundary_layers(
-                gmsh_model, contact_zones,
-                num_layers=boundary_layers,
-                growth_rate=growth_rate
-            )
+            # Create distance field from contact zones
+            field_id = 1
+
+            # Create ball field for each contact zone
+            for i, zone in enumerate(contact_zones):
+                # Ball field centered at contact zone
+                gmsh.model.mesh.field.add("Ball", field_id + i)
+                gmsh.model.mesh.field.setNumber(field_id + i, "VIn", refined_size)
+                gmsh.model.mesh.field.setNumber(field_id + i, "VOut", base_mesh_size)
+                gmsh.model.mesh.field.setNumber(field_id + i, "Radius", zone.area ** 0.5)
+                gmsh.model.mesh.field.setNumber(field_id + i, "Thickness", base_mesh_size)
+                gmsh.model.mesh.field.setNumber(field_id + i, "XCenter", float(zone.center[0]))
+                gmsh.model.mesh.field.setNumber(field_id + i, "YCenter", float(zone.center[1]))
+                gmsh.model.mesh.field.setNumber(field_id + i, "ZCenter", float(zone.center[2]))
+
+            # Combine all ball fields with Min
+            if len(contact_zones) > 1:
+                min_field_id = field_id + len(contact_zones)
+                gmsh.model.mesh.field.add("Min", min_field_id)
+                gmsh.model.mesh.field.setNumbers(
+                    min_field_id, "FieldsList",
+                    list(range(field_id, field_id + len(contact_zones)))
+                )
+                gmsh.model.mesh.field.setAsBackgroundMesh(min_field_id)
+            else:
+                gmsh.model.mesh.field.setAsBackgroundMesh(field_id)
+
+            # Apply boundary layers if requested
+            if boundary_layers > 0:
+                self._apply_boundary_layers(
+                    gmsh_model, contact_zones,
+                    num_layers=boundary_layers,
+                    growth_rate=growth_rate
+                )
+
+            self.logger.info("Contact refinement applied successfully")
+
+        except ImportError as e:
+            self.logger.error(f"Failed to import gmsh: {e}")
+            raise RuntimeError("gmsh module not available - install with: pip install gmsh") from e
+        except Exception as e:
+            self.logger.error(f"Failed to apply contact refinement: {e}")
+            raise RuntimeError(f"Contact refinement failed: {e}") from e
 
     def _apply_boundary_layers(
         self,
@@ -293,45 +358,76 @@ class ContactAwareMesher:
 
         Returns:
             Tuple of (modified_mesh1, modified_mesh2)
+
+        Raises:
+            ValueError: If parameters are invalid
+            RuntimeError: If node alignment fails
         """
-        from scipy.spatial import cKDTree
+        # Input validation
+        if mesh1 is None or mesh2 is None:
+            raise TypeError("mesh1 and mesh2 cannot be None")
 
-        self.logger.info(
-            f"Aligning contact nodes (tolerance={tolerance}mm)..."
-        )
+        if contact_zone is None:
+            raise TypeError("contact_zone cannot be None")
 
-        # Extract surface nodes from both meshes
-        surface_nodes1 = self._extract_surface_nodes(mesh1)
-        surface_nodes2 = self._extract_surface_nodes(mesh2)
+        if tolerance <= 0:
+            raise ValueError(f"tolerance must be positive, got {tolerance}")
 
-        if len(surface_nodes1) == 0 or len(surface_nodes2) == 0:
-            self.logger.warning("No surface nodes found for alignment")
+        if not hasattr(mesh1, 'nodes') or not hasattr(mesh2, 'nodes'):
+            raise ValueError("mesh1 and mesh2 must have 'nodes' attribute")
+
+        if mesh1.nodes is None or len(mesh1.nodes) == 0:
+            raise ValueError("mesh1 has no nodes")
+
+        if mesh2.nodes is None or len(mesh2.nodes) == 0:
+            raise ValueError("mesh2 has no nodes")
+
+        try:
+            from scipy.spatial import cKDTree
+
+            self.logger.info(
+                f"Aligning contact nodes (tolerance={tolerance}mm)..."
+            )
+
+            # Extract surface nodes from both meshes
+            surface_nodes1 = self._extract_surface_nodes(mesh1)
+            surface_nodes2 = self._extract_surface_nodes(mesh2)
+
+            if len(surface_nodes1) == 0 or len(surface_nodes2) == 0:
+                self.logger.warning("No surface nodes found for alignment")
+                return mesh1, mesh2
+
+            # Build KD-tree for mesh2 surface nodes
+            tree = cKDTree(mesh2.nodes[surface_nodes2])
+
+            # Find and snap close node pairs
+            snapped_count = 0
+            for idx1 in surface_nodes1:
+                node1 = mesh1.nodes[idx1]
+
+                # Query nearest node in mesh2
+                dist, idx2_tree = tree.query(node1, k=1)
+
+                if dist < tolerance:
+                    idx2 = surface_nodes2[idx2_tree]
+
+                    # Snap to midpoint
+                    midpoint = (node1 + mesh2.nodes[idx2]) / 2.0
+                    mesh1.nodes[idx1] = midpoint
+                    mesh2.nodes[idx2] = midpoint
+
+                    snapped_count += 1
+
+            self.logger.info(f"Snapped {snapped_count} node pairs")
+
             return mesh1, mesh2
 
-        # Build KD-tree for mesh2 surface nodes
-        tree = cKDTree(mesh2.nodes[surface_nodes2])
-
-        # Find and snap close node pairs
-        snapped_count = 0
-        for idx1 in surface_nodes1:
-            node1 = mesh1.nodes[idx1]
-
-            # Query nearest node in mesh2
-            dist, idx2_tree = tree.query(node1, k=1)
-
-            if dist < tolerance:
-                idx2 = surface_nodes2[idx2_tree]
-
-                # Snap to midpoint
-                midpoint = (node1 + mesh2.nodes[idx2]) / 2.0
-                mesh1.nodes[idx1] = midpoint
-                mesh2.nodes[idx2] = midpoint
-
-                snapped_count += 1
-
-        self.logger.info(f"Snapped {snapped_count} node pairs")
-
-        return mesh1, mesh2
+        except ImportError as e:
+            self.logger.error(f"Failed to import scipy: {e}")
+            raise RuntimeError("scipy module not available - install with: pip install scipy") from e
+        except Exception as e:
+            self.logger.error(f"Failed to align contact nodes: {e}")
+            raise RuntimeError(f"Node alignment failed: {e}") from e
 
     def _extract_surface_nodes(self, mesh: MeshData) -> np.ndarray:
         """Extract nodes on the surface of the mesh."""

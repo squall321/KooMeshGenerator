@@ -71,67 +71,95 @@ class MaterialValidator:
 
         Returns:
             MaterialValidationReport
+
+        Raises:
+            ValueError: If parameters are invalid
+            RuntimeError: If validation fails
         """
-        issues = []
+        # Input validation
+        if part_name is None or not isinstance(part_name, str):
+            raise TypeError("part_name must be a string")
 
-        # Get material from library
-        material = self.material_library.get_material(material_name)
+        if not part_name.strip():
+            raise ValueError("part_name cannot be empty")
 
-        if material is None:
-            issues.append(MaterialIssue(
-                part_index=0,
-                part_name=part_name,
-                severity='ERROR',
-                message=f'Material "{material_name}" not found in library',
-                suggestion='Check material name or add to library'
-            ))
+        if material_name is None or not isinstance(material_name, str):
+            raise TypeError("material_name must be a string")
+
+        if not material_name.strip():
+            raise ValueError("material_name cannot be empty")
+
+        if simulation_type not in ['crash', 'forming', 'impact', 'drop_test']:
+            self.logger.warning(f"Unknown simulation_type: {simulation_type}")
+
+        if part_volume is not None and part_volume <= 0:
+            raise ValueError(f"part_volume must be positive, got {part_volume}")
+
+        try:
+            issues = []
+
+            # Get material from library
+            material = self.material_library.get_material(material_name)
+
+            if material is None:
+                issues.append(MaterialIssue(
+                    part_index=0,
+                    part_name=part_name,
+                    severity='ERROR',
+                    message=f'Material "{material_name}" not found in library',
+                    suggestion='Check material name or add to library'
+                ))
+                return MaterialValidationReport(
+                    valid=False,
+                    issues=issues,
+                    statistics={}
+                )
+
+            # Check 1: Simulation type compatibility
+            sim_issues = self._check_simulation_compatibility(
+                part_name, material, simulation_type
+            )
+            issues.extend(sim_issues)
+
+            # Check 2: Property completeness
+            prop_issues = self._check_property_completeness(
+                part_name, material, simulation_type
+            )
+            issues.extend(prop_issues)
+
+            # Check 3: Physical reasonableness
+            phys_issues = self._check_physical_reasonableness(
+                part_name, material
+            )
+            issues.extend(phys_issues)
+
+            # Check 4: Practical concerns
+            if part_volume:
+                pract_issues = self._check_practical_concerns(
+                    part_name, material, part_volume
+                )
+                issues.extend(pract_issues)
+
+            # Determine validity
+            has_errors = any(issue.severity == 'ERROR' for issue in issues)
+            valid = not has_errors
+
+            statistics = {
+                'num_errors': sum(1 for i in issues if i.severity == 'ERROR'),
+                'num_warnings': sum(1 for i in issues if i.severity == 'WARNING'),
+                'material_category': material.category,
+                'material_density': material.density
+            }
+
             return MaterialValidationReport(
-                valid=False,
+                valid=valid,
                 issues=issues,
-                statistics={}
+                statistics=statistics
             )
 
-        # Check 1: Simulation type compatibility
-        sim_issues = self._check_simulation_compatibility(
-            part_name, material, simulation_type
-        )
-        issues.extend(sim_issues)
-
-        # Check 2: Property completeness
-        prop_issues = self._check_property_completeness(
-            part_name, material, simulation_type
-        )
-        issues.extend(prop_issues)
-
-        # Check 3: Physical reasonableness
-        phys_issues = self._check_physical_reasonableness(
-            part_name, material
-        )
-        issues.extend(phys_issues)
-
-        # Check 4: Practical concerns
-        if part_volume:
-            pract_issues = self._check_practical_concerns(
-                part_name, material, part_volume
-            )
-            issues.extend(pract_issues)
-
-        # Determine validity
-        has_errors = any(issue.severity == 'ERROR' for issue in issues)
-        valid = not has_errors
-
-        statistics = {
-            'num_errors': sum(1 for i in issues if i.severity == 'ERROR'),
-            'num_warnings': sum(1 for i in issues if i.severity == 'WARNING'),
-            'material_category': material.category,
-            'material_density': material.density
-        }
-
-        return MaterialValidationReport(
-            valid=valid,
-            issues=issues,
-            statistics=statistics
-        )
+        except Exception as e:
+            self.logger.error(f"Material validation failed: {e}")
+            raise RuntimeError(f"Material validation failed: {e}") from e
 
     def _check_simulation_compatibility(
         self,

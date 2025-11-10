@@ -104,6 +104,9 @@ class ContactClassifier:
         Returns:
             ContactType enum
 
+        Raises:
+            ValueError: If parameters are invalid
+
         Classification Rules:
         - gap < 0.01mm AND area < 10mm² → TIEBREAK (spot weld)
         - gap < 0.01mm → TIED (bonded)
@@ -111,6 +114,20 @@ class ContactClassifier:
         - area > 100mm² AND angle < 5° → FORMING (large parallel surfaces)
         - otherwise → AUTOMATIC
         """
+        # Input validation
+        if gap is None or gap < 0:
+            raise ValueError(f"gap must be non-negative, got {gap}")
+
+        if surface_angle is None or surface_angle < 0 or surface_angle > 180:
+            raise ValueError(f"surface_angle must be in [0, 180] degrees, got {surface_angle}")
+
+        if contact_area is None or contact_area <= 0:
+            raise ValueError(f"contact_area must be positive, got {contact_area}")
+
+        if simulation_type not in ['crash', 'forming', 'impact', 'drop_test']:
+            self.logger.warning(f"Unknown simulation_type: {simulation_type}, using 'crash'")
+            simulation_type = 'crash'
+
         self.logger.debug(
             f"Classifying contact: gap={gap:.3f}mm, angle={surface_angle:.1f}°, "
             f"area={contact_area:.1f}mm²"
@@ -191,7 +208,21 @@ class ContactClassifier:
 
         Returns:
             ContactParameters with optimized values
+
+        Raises:
+            TypeError: If contact_type is not a ContactType enum
+            ValueError: If parameters are invalid
         """
+        # Input validation
+        if contact_type is None:
+            raise TypeError("contact_type cannot be None")
+
+        if not isinstance(contact_type, ContactType):
+            raise TypeError(f"contact_type must be ContactType enum, got {type(contact_type).__name__}")
+
+        if simulation_type not in ['crash', 'forming', 'impact', 'drop_test']:
+            self.logger.warning(f"Unknown simulation_type: {simulation_type}, using default parameters")
+
         params = ContactParameters()
 
         if contact_type == ContactType.AUTOMATIC:
@@ -292,19 +323,48 @@ class ContactClassifier:
 
         Returns:
             Angle in degrees (0-180)
+
+        Raises:
+            ValueError: If vectors are invalid or zero-length
+            TypeError: If inputs are not numpy arrays
         """
-        # Normalize vectors
-        n1 = normal1 / np.linalg.norm(normal1)
-        n2 = normal2 / np.linalg.norm(normal2)
+        # Input validation
+        if normal1 is None or normal2 is None:
+            raise TypeError("normal vectors cannot be None")
 
-        # Calculate angle
-        cos_angle = np.dot(n1, n2)
-        cos_angle = np.clip(cos_angle, -1.0, 1.0)  # Numerical stability
+        if not isinstance(normal1, np.ndarray) or not isinstance(normal2, np.ndarray):
+            raise TypeError("normal vectors must be numpy arrays")
 
-        angle_rad = np.arccos(cos_angle)
-        angle_deg = np.degrees(angle_rad)
+        if normal1.size == 0 or normal2.size == 0:
+            raise ValueError("normal vectors cannot be empty")
 
-        return angle_deg
+        if len(normal1) != 3 or len(normal2) != 3:
+            raise ValueError(f"normal vectors must be 3D, got shapes {normal1.shape} and {normal2.shape}")
+
+        try:
+            # Calculate norms
+            norm1 = np.linalg.norm(normal1)
+            norm2 = np.linalg.norm(normal2)
+
+            if norm1 < 1e-10 or norm2 < 1e-10:
+                raise ValueError(f"normal vectors cannot be zero-length: norms={norm1:.2e}, {norm2:.2e}")
+
+            # Normalize vectors
+            n1 = normal1 / norm1
+            n2 = normal2 / norm2
+
+            # Calculate angle
+            cos_angle = np.dot(n1, n2)
+            cos_angle = np.clip(cos_angle, -1.0, 1.0)  # Numerical stability
+
+            angle_rad = np.arccos(cos_angle)
+            angle_deg = np.degrees(angle_rad)
+
+            return angle_deg
+
+        except Exception as e:
+            self.logger.error(f"Failed to calculate surface angle: {e}")
+            raise RuntimeError(f"Surface angle calculation failed: {e}") from e
 
 
 class ContactClassificationRules:

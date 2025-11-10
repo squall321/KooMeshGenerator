@@ -164,57 +164,92 @@ class AssemblyContactManager:
 
         Returns:
             List of ContactPair objects
+
+        Raises:
+            ValueError: If parameters are invalid
+            RuntimeError: If contact detection fails
         """
-        self.logger.info(
-            f"Detecting contacts in assembly ({len(parts)} parts)..."
-        )
+        # Input validation
+        if parts is None or not isinstance(parts, list):
+            raise TypeError("parts must be a list")
 
-        # Build spatial hash grid
-        grid = SpatialHashGrid(cell_size=tolerance * 10)
+        if len(parts) == 0:
+            raise ValueError("parts list is empty")
 
-        for i, part in enumerate(parts):
-            bbox = self._get_bounding_box(part)
-            grid.insert(i, bbox)
+        if len(parts) == 1:
+            self.logger.warning("Only 1 part provided - no contacts possible")
+            return []
 
-        # Find candidate pairs using spatial hash
-        candidate_pairs = []
-        for i in range(len(parts)):
-            bbox_i = grid.bboxes[i]
+        if part_names is None or not isinstance(part_names, list):
+            raise TypeError("part_names must be a list")
 
-            # Expand bbox by tolerance for query
-            min_corner = bbox_i[0] - tolerance
-            max_corner = bbox_i[1] + tolerance
+        if len(part_names) != len(parts):
+            raise ValueError(f"part_names length ({len(part_names)}) must match parts length ({len(parts)})")
 
-            neighbors = grid.query((min_corner, max_corner))
+        if tolerance <= 0:
+            raise ValueError(f"tolerance must be positive, got {tolerance}")
 
-            for j in neighbors:
-                if i < j:  # Avoid duplicates and self-contact
-                    candidate_pairs.append((i, j))
+        if materials is not None:
+            if not isinstance(materials, list):
+                raise TypeError("materials must be a list or None")
+            if len(materials) != len(parts):
+                raise ValueError(f"materials length ({len(materials)}) must match parts length ({len(parts)})")
 
-        self.logger.info(
-            f"Spatial hash found {len(candidate_pairs)} candidate pairs "
-            f"(vs {len(parts)*(len(parts)-1)//2} brute force)"
-        )
-
-        # Detailed contact detection for candidates
-        contacts = []
-        for i, j in candidate_pairs:
-            contact = self._detect_contact_detailed(
-                parts[i], parts[j],
-                part_names[i], part_names[j],
-                i, j,
-                tolerance=tolerance,
-                material1=materials[i] if materials else None,
-                material2=materials[j] if materials else None,
-                simulation_type=simulation_type
+        try:
+            self.logger.info(
+                f"Detecting contacts in assembly ({len(parts)} parts)..."
             )
 
-            if contact:
-                contacts.append(contact)
+            # Build spatial hash grid
+            grid = SpatialHashGrid(cell_size=tolerance * 10)
 
-        self.logger.info(f"Detected {len(contacts)} actual contact pairs")
+            for i, part in enumerate(parts):
+                bbox = self._get_bounding_box(part)
+                grid.insert(i, bbox)
 
-        return contacts
+            # Find candidate pairs using spatial hash
+            candidate_pairs = []
+            for i in range(len(parts)):
+                bbox_i = grid.bboxes[i]
+
+                # Expand bbox by tolerance for query
+                min_corner = bbox_i[0] - tolerance
+                max_corner = bbox_i[1] + tolerance
+
+                neighbors = grid.query((min_corner, max_corner))
+
+                for j in neighbors:
+                    if i < j:  # Avoid duplicates and self-contact
+                        candidate_pairs.append((i, j))
+
+            self.logger.info(
+                f"Spatial hash found {len(candidate_pairs)} candidate pairs "
+                f"(vs {len(parts)*(len(parts)-1)//2} brute force)"
+            )
+
+            # Detailed contact detection for candidates
+            contacts = []
+            for i, j in candidate_pairs:
+                contact = self._detect_contact_detailed(
+                    parts[i], parts[j],
+                    part_names[i], part_names[j],
+                    i, j,
+                    tolerance=tolerance,
+                    material1=materials[i] if materials else None,
+                    material2=materials[j] if materials else None,
+                    simulation_type=simulation_type
+                )
+
+                if contact:
+                    contacts.append(contact)
+
+            self.logger.info(f"Detected {len(contacts)} actual contact pairs")
+
+            return contacts
+
+        except Exception as e:
+            self.logger.error(f"Contact detection failed: {e}")
+            raise RuntimeError(f"Assembly contact detection failed: {e}") from e
 
     def _get_bounding_box(self, mesh: MeshData) -> Tuple[np.ndarray, np.ndarray]:
         """Calculate axis-aligned bounding box."""

@@ -50,6 +50,10 @@ class GeometryBasedMaterialAssigner:
         Returns:
             Dictionary of {part_index: material_name}
 
+        Raises:
+            ValueError: If parameters are invalid
+            RuntimeError: If assignment fails
+
         Example Rules:
             {
                 '*steel*.step': 'Steel_Mild',
@@ -59,26 +63,45 @@ class GeometryBasedMaterialAssigner:
                 'bumper*.step': 'Plastic_PP'
             }
         """
-        assignments = {}
+        # Input validation
+        if part_files is None or not isinstance(part_files, list):
+            raise TypeError("part_files must be a list")
 
-        for i, filepath in enumerate(part_files):
-            filename = filepath.name.lower()
+        if len(part_files) == 0:
+            raise ValueError("part_files list is empty")
 
-            # Try each rule in order
-            for pattern, material in rules.items():
-                if fnmatch.fnmatch(filename, pattern.lower()):
-                    assignments[i] = material
-                    self.logger.info(
-                        f"Assigned {material} to {filepath.name} "
-                        f"(matched pattern '{pattern}')"
-                    )
-                    break
+        if rules is None or not isinstance(rules, dict):
+            raise TypeError("rules must be a dictionary")
 
-        self.logger.info(
-            f"Filename-based assignment: {len(assignments)}/{len(part_files)} parts"
-        )
+        if len(rules) == 0:
+            self.logger.warning("No rules provided - no assignments will be made")
+            return {}
 
-        return assignments
+        try:
+            assignments = {}
+
+            for i, filepath in enumerate(part_files):
+                filename = filepath.name.lower()
+
+                # Try each rule in order
+                for pattern, material in rules.items():
+                    if fnmatch.fnmatch(filename, pattern.lower()):
+                        assignments[i] = material
+                        self.logger.info(
+                            f"Assigned {material} to {filepath.name} "
+                            f"(matched pattern '{pattern}')"
+                        )
+                        break
+
+            self.logger.info(
+                f"Filename-based assignment: {len(assignments)}/{len(part_files)} parts"
+            )
+
+            return assignments
+
+        except Exception as e:
+            self.logger.error(f"Filename-based assignment failed: {e}")
+            raise RuntimeError(f"Material assignment by filename failed: {e}") from e
 
     def assign_by_geometry(
         self,

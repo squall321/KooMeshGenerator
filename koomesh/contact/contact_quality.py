@@ -75,65 +75,93 @@ class ContactQualityChecker:
 
         Returns:
             ContactQualityReport with all findings
+
+        Raises:
+            ValueError: If parameters are invalid
+            RuntimeError: If quality checks fail
         """
-        self.logger.info("Checking contact quality...")
+        # Input validation
+        if mesh1 is None or mesh2 is None:
+            raise TypeError("mesh1 and mesh2 cannot be None")
 
-        issues = []
-        statistics = {}
+        if contact_surfaces1 is None or contact_surfaces2 is None:
+            raise TypeError("contact_surfaces cannot be None")
 
-        # Check 1: Penetration
-        pen_issues, pen_stats = self._check_penetration(
-            mesh1, mesh2, contact_surfaces1, contact_surfaces2, tolerance
-        )
-        issues.extend(pen_issues)
-        statistics['penetration'] = pen_stats
+        if not isinstance(contact_surfaces1, np.ndarray) or not isinstance(contact_surfaces2, np.ndarray):
+            raise TypeError("contact_surfaces must be numpy arrays")
 
-        # Check 2: Gap uniformity
-        gap_issues, gap_stats = self._check_gap_uniformity(
-            mesh1, mesh2, contact_surfaces1, contact_surfaces2
-        )
-        issues.extend(gap_issues)
-        statistics['gap'] = gap_stats
+        if len(contact_surfaces1) == 0 or len(contact_surfaces2) == 0:
+            raise ValueError("contact_surfaces cannot be empty")
 
-        # Check 3: Mesh size ratio
-        ratio_issues, ratio_stats = self._check_mesh_size_ratio(
-            mesh1, mesh2, contact_surfaces1, contact_surfaces2
-        )
-        issues.extend(ratio_issues)
-        statistics['mesh_size'] = ratio_stats
+        if tolerance <= 0:
+            raise ValueError(f"tolerance must be positive, got {tolerance}")
 
-        # Check 4: Surface normals
-        normal_issues, normal_stats = self._check_normal_consistency(
-            mesh1, mesh2, contact_surfaces1, contact_surfaces2
-        )
-        issues.extend(normal_issues)
-        statistics['normals'] = normal_stats
+        if not hasattr(mesh1, 'nodes') or not hasattr(mesh2, 'nodes'):
+            raise ValueError("meshes must have 'nodes' attribute")
 
-        # Check 5: Contact area continuity
-        area_issues, area_stats = self._check_area_continuity(
-            mesh1, mesh2, contact_surfaces1, contact_surfaces2
-        )
-        issues.extend(area_issues)
-        statistics['area'] = area_stats
+        try:
+            self.logger.info("Checking contact quality...")
 
-        # Calculate overall quality score
-        score = self._calculate_quality_score(issues, statistics)
+            issues = []
+            statistics = {}
 
-        # Determine pass/fail
-        has_errors = any(issue.severity == 'ERROR' for issue in issues)
-        passed = not has_errors
+            # Check 1: Penetration
+            pen_issues, pen_stats = self._check_penetration(
+                mesh1, mesh2, contact_surfaces1, contact_surfaces2, tolerance
+            )
+            issues.extend(pen_issues)
+            statistics['penetration'] = pen_stats
 
-        self.logger.info(
-            f"Contact quality check complete: "
-            f"{'PASSED' if passed else 'FAILED'}, score={score:.2f}"
-        )
+            # Check 2: Gap uniformity
+            gap_issues, gap_stats = self._check_gap_uniformity(
+                mesh1, mesh2, contact_surfaces1, contact_surfaces2
+            )
+            issues.extend(gap_issues)
+            statistics['gap'] = gap_stats
 
-        return ContactQualityReport(
-            passed=passed,
-            score=score,
-            issues=issues,
-            statistics=statistics
-        )
+            # Check 3: Mesh size ratio
+            ratio_issues, ratio_stats = self._check_mesh_size_ratio(
+                mesh1, mesh2, contact_surfaces1, contact_surfaces2
+            )
+            issues.extend(ratio_issues)
+            statistics['mesh_size'] = ratio_stats
+
+            # Check 4: Surface normals
+            normal_issues, normal_stats = self._check_normal_consistency(
+                mesh1, mesh2, contact_surfaces1, contact_surfaces2
+            )
+            issues.extend(normal_issues)
+            statistics['normals'] = normal_stats
+
+            # Check 5: Contact area continuity
+            area_issues, area_stats = self._check_area_continuity(
+                mesh1, mesh2, contact_surfaces1, contact_surfaces2
+            )
+            issues.extend(area_issues)
+            statistics['area'] = area_stats
+
+            # Calculate overall quality score
+            score = self._calculate_quality_score(issues, statistics)
+
+            # Determine pass/fail
+            has_errors = any(issue.severity == 'ERROR' for issue in issues)
+            passed = not has_errors
+
+            self.logger.info(
+                f"Contact quality check complete: "
+                f"{'PASSED' if passed else 'FAILED'}, score={score:.2f}"
+            )
+
+            return ContactQualityReport(
+                passed=passed,
+                score=score,
+                issues=issues,
+                statistics=statistics
+            )
+
+        except Exception as e:
+            self.logger.error(f"Contact quality check failed: {e}")
+            raise RuntimeError(f"Contact quality check failed: {e}") from e
 
     def _check_penetration(
         self,
